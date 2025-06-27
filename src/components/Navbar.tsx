@@ -1,16 +1,18 @@
 import { useState } from 'react';
-import { Activity, Settings } from 'lucide-react';
+import { Activity, Settings, KeyRound } from 'lucide-react';
 import { ConnectionStatus } from './ConnectionStatus';
-import { useSocket } from '../hooks/useSocket';
 import DEFAULT_AVATAR from '../assets/photos/defaultAvatar';
 import { useAuth } from "../context/AuthContext";
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
+import { useSocketContext } from '../context/SocketContext';
 
 const Navbar = () => {
 
+    const location = useLocation();
     const { user, login, logout, loading } = useAuth();
 
-    const { connectionStatus } = useSocket();
+    const { connectionStatus } = useSocketContext();
+    
 
     const [openProfile, setOpenProfile] = useState(false);
     const [openSettings, setOpenSettings] = useState(false);
@@ -45,36 +47,46 @@ const Navbar = () => {
                     </div>
 
                     <div className="flex items-center space-x-4">
-                        <NavLink to={"/documentation"} className="text-sm text-gray-300 hover:text-white transition-colors duration-200">
-                            Documentation
-                        </NavLink>
-                        <ConnectionStatus status={connectionStatus} />
+                        <div className={`${location.pathname === '/dashboard' ? 'hidden' : 'flex items-center space-x-4'}`}>
+                            <NavLink to={"/documentation"} className="text-sm text-gray-300 hover:text-white transition-colors duration-200">
+                                Documentation
+                            </NavLink>
+                            <NavLink
+                                to="/api-key"
+                                className={`inline-flex items-center gap-2 px-4 py-3 rounded-md text-sm font-medium transition-colors duration-200 bg-gray-700 text-white hover:bg-gray-600 hover:text-white`}
+                            >
+                                <KeyRound size={15} />
+                                API Key
+                            </NavLink>
 
-                        {/* // Settings  */}
-                        <div className="relative p-2 text-gray-400 hover:text-white transition-colors duration-200 cursor-pointer">
-                            <Settings className="h-5 w-5" onClick={toggleSettings} />
+                        </div>
 
-                            {openSettings && (
-                                <div className="absolute right-0 mt-3 w-48 bg-gray-900 text-white rounded-xl shadow-lg border border-gray-700 p-3 z-50 space-y-2">
-                                    <h3 className="text-sm font-semibold text-gray-300">Settings</h3>
+                        <div className={`${location.pathname === '/dashboard' ? 'flex items-center space-x-2' : 'hidden'}`}>
+                            <ConnectionStatus status={connectionStatus} />
+                            <div className="relative p-2 text-gray-400 hover:text-white transition-colors duration-200 cursor-pointer">
+                                <Settings className="h-5 w-5" onClick={toggleSettings} />
+                                {openSettings && (
+                                    <div className="absolute right-0 mt-3 w-48 bg-gray-900 text-white rounded-xl shadow-lg border border-gray-700 p-3 z-50 space-y-2">
+                                        <h3 className="text-sm font-semibold text-gray-300">Settings</h3>
 
-                                    {connectionStatus ? (
-                                        <button className="w-full bg-red-500 text-sm font-medium py-2 rounded-lg hover:bg-red-600 transition-all">
-                                            Disconnect
-                                        </button>
-                                    ) : (
-                                        <button className="w-full bg-emerald-500 text-sm font-medium py-2 rounded-lg hover:bg-emerald-600 transition-all">
-                                            Connect
-                                        </button>
-                                    )}
-                                </div>
-                            )}
+                                        {connectionStatus ? (
+                                            <button className="w-full bg-red-500 text-sm font-medium py-2 rounded-lg hover:bg-red-600 transition-all">
+                                                Disconnect
+                                            </button>
+                                        ) : (
+                                            <button className="w-full bg-emerald-500 text-sm font-medium py-2 rounded-lg hover:bg-emerald-600 transition-all">
+                                                Connect
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* // avatar */}
                         <div className="relative">
                             <div
-                                className="w-10 h-10 border border-gray-400 rounded-full overflow-hidden p-1 cursor-pointer focus:outline-none flex justify-center items-center bg-gray-700"
+                                className="w-10 h-10 border border-gray-400 rounded-full overflow-hidden p-[0.15rem] cursor-pointer focus:outline-none flex justify-center items-center bg-gray-700"
                                 tabIndex={0}
                                 onClick={() => {
                                     user ? toggleProfile() : login();

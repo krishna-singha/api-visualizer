@@ -1,4 +1,12 @@
-import { useState, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import type { ReactNode } from "react";
+import { useAuth } from "./AuthContext";
+import axios from "axios";
 
 export interface ApiData {
   id: string;
@@ -6,6 +14,7 @@ export interface ApiData {
   fullUrl: string;
   route: string;
   queryParams: Record<string, string>;
+  params?: Record<string, string>;
   timestamp: number;
   timestampString: string;
   duration: number;
@@ -67,32 +76,43 @@ export interface ApiData {
   };
 }
 
-export const useSocket = () => {
+interface SocketContextType {
+  connectionStatus: boolean;
+  data: ApiData[];
+}
+
+const SocketContext = createContext<SocketContextType | null>(null);
+
+export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [data, setData] = useState<ApiData[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<boolean>(false);
+  const [connectionStatus, setConnectionStatus] = useState(false);
+
+  const { user } = useAuth();
 
   useEffect(() => {
-    
-    const socket = new WebSocket(import.meta.env.VITE_WS_SERVER_URL);
-    
+    if (!user?.apiKey) return;
+
+    const clientId = user.apiKey;
+    const wsBase = import.meta.env.VITE_WS_SERVER_URL;
+    const socket = new WebSocket(`${wsBase}/frontend?clientId=${clientId}`);
+
     socket.onopen = () => {
       console.log("✅ WebSocket connected");
       setWs(socket);
       setConnectionStatus(true);
     };
-    
+
     socket.onmessage = async (event) => {
       try {
         const rawText =
           typeof event.data === "string" ? event.data : await event.data.text();
-
         const payload = JSON.parse(rawText);
-        const url = new URL(payload.request?.path || "/", `http://${payload.meta?.host || "localhost"}`);
 
         const contentType = payload.request?.contentType || "";
         const responseContentType = payload.response?.contentType || "";
         const bodyType = determineBodyType(payload.request?.method, contentType);
+        const url = new URL(payload.request?.path || "/", `http://${payload.meta?.host || "localhost"}`);
 
         const apiData: ApiData = {
           id: crypto.randomUUID(),
@@ -100,6 +120,7 @@ export const useSocket = () => {
           fullUrl: url.href,
           route: url.pathname,
           queryParams: Object.fromEntries(url.searchParams.entries()),
+          params: payload.request?.params || {},
           timestamp: Date.now(),
           timestampString: new Date().toLocaleString(),
           duration: payload.meta?.durationMs || 0,
@@ -113,7 +134,7 @@ export const useSocket = () => {
             headers: payload.request?.headers || {},
             body: payload.request?.body || null,
             rawBodyBase64: payload.request?.rawBodyBase64 || undefined,
-            contentType: contentType,
+            contentType,
             charset: payload.request?.charset || null,
             bodyType,
           },
@@ -150,8 +171,11 @@ export const useSocket = () => {
         };
 
         setData((prev) => [apiData, ...prev]);
-        // console.log(apiData);
 
+        await axios.post("/api/request-log/add", {
+          uid: user.uid,
+          apiData: apiData,
+        });
       } catch (e) {
         console.warn("❌ Invalid WebSocket payload:", event.data);
       }
@@ -162,21 +186,32 @@ export const useSocket = () => {
       setConnectionStatus(false);
     };
 
-    socket.onerror = (err) => {
-      console.error("⚠️ WebSocket error:", err);
+    socket.onerror = () => {
+      console.error("⚠️ WebSocket error");
       setConnectionStatus(false);
     };
+
+    setWs(socket);
 
     return () => {
       socket.close();
       console.log("🧼 WebSocket connection closed");
     };
-  }, []);
+  }, [user?.apiKey]);
 
-  return {
-    connectionStatus,
-    data,
-  };
+  return (
+    <SocketContext.Provider value={{ connectionStatus, data }}>
+      {children}
+    </SocketContext.Provider>
+  );
+};
+
+export const useSocketContext = () => {
+  const context = useContext(SocketContext);
+  if (!context) {
+    throw new Error("useSocketContext must be used within a SocketProvider");
+  }
+  return context;
 };
 
 function tryParseJson(data: any) {

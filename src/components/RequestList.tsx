@@ -1,7 +1,6 @@
 import React from 'react';
 import { Clock, HardDrive, Monitor, Globe } from 'lucide-react';
-// import type { ApiRequest } from '../types/api';
-import type { ApiData } from '../hooks/useSocket';
+import type { ApiData } from '../context/SocketContext';
 import { StatusBadge } from './StatusBadge';
 import { MethodBadge } from './MethodBadge';
 
@@ -48,13 +47,13 @@ export const RequestList: React.FC<Props> = ({ data, selectedRequest, onSelectRe
             <p>No requests yet. Waiting for API calls...</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-700/50">
+          <div className="flex flex-col gap-[0.1rem] bg-gray-700/50">
             {data.map((request) => (
               <div
                 key={request.id}
                 onClick={() => onSelectRequest(request)}
                 className={`p-4 cursor-pointer transition-all duration-200 hover:bg-gray-700/30 ${
-                  selectedRequest?.id === request.id ? 'bg-blue-500/10 border-r-2 border-blue-400' : ''
+                  selectedRequest?.id === request.id ? 'bg-blue-500/10 border-r-2 border-blue-400' : 'bg-gray-800/50'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">

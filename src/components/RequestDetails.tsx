@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Globe, Clock, HardDrive, User, Code, FileText } from 'lucide-react';
-import type { ApiData } from '../hooks//useSocket';
+import type { ApiData } from '../context/SocketContext';
 import { StatusBadge } from './StatusBadge';
 import { MethodBadge } from './MethodBadge';
 
@@ -9,7 +9,7 @@ interface Props {
 }
 
 export const RequestDetails: React.FC<Props> = ({ data }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'authorization' | 'headers' | 'request' | 'response'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'authorization' | 'query' | 'headers' | 'request' | 'response'>('overview');
   // const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview']));
 
   if (!data) {
@@ -51,6 +51,7 @@ export const RequestDetails: React.FC<Props> = ({ data }) => {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Globe },
+    { id: 'query', label: 'Query', icon: Code },
     { id: 'authorization', label: 'Authorization', icon: User },
     { id: 'headers', label: 'Headers', icon: FileText },
     { id: 'request', label: 'Request', icon: Code },
@@ -91,6 +92,7 @@ export const RequestDetails: React.FC<Props> = ({ data }) => {
       <div className="p-4 max-h-96 overflow-y-auto">
         {activeTab === 'overview' && (
           <div className="space-y-6">
+            {/* Request URL */}
             <div className="bg-gray-700/30 rounded-lg p-4">
               <h3 className="text-sm font-medium text-gray-300 mb-3">Request URL</h3>
               <div className="flex items-center space-x-2 text-blue-400 font-mono text-sm break-all">
@@ -99,7 +101,9 @@ export const RequestDetails: React.FC<Props> = ({ data }) => {
               </div>
             </div>
 
+            {/* Timing and Size */}
             <div className="grid grid-cols-3 gap-4">
+              {/* Duration */}
               <div className="bg-gray-700/30 rounded-lg p-4">
                 <h3 className="text-sm font-medium text-gray-300 mb-2 flex items-center space-x-2">
                   <Clock className="h-4 w-4" />
@@ -109,25 +113,28 @@ export const RequestDetails: React.FC<Props> = ({ data }) => {
                 <p className="text-xs text-gray-400 mt-1">{formatTime(data.timestamp)}</p>
               </div>
 
+              {/* Request Size */}
               <div className="bg-gray-700/30 rounded-lg p-4">
                 <h3 className="text-sm font-medium text-gray-300 mb-2 flex items-center space-x-2">
                   <HardDrive className="h-4 w-4" />
-                  <span>Size</span>
+                  <span>Request Size</span>
                 </h3>
                 <p className="text-white font-mono">{formatBytes(data.size.request)}</p>
                 <p className="text-xs text-gray-400 mt-1">Request body</p>
               </div>
 
+              {/* Response Size */}
               <div className="bg-gray-700/30 rounded-lg p-4">
                 <h3 className="text-sm font-medium text-gray-300 mb-2 flex items-center space-x-2">
                   <HardDrive className="h-4 w-4" />
-                  <span>Size</span>
+                  <span>Response Size</span>
                 </h3>
                 <p className="text-white font-mono">{formatBytes(data.size.response)}</p>
                 <p className="text-xs text-gray-400 mt-1">Response body</p>
               </div>
             </div>
 
+            {/* Client Info */}
             <div className="bg-gray-700/30 rounded-lg p-4">
               <h3 className="text-sm font-medium text-gray-300 mb-2 flex items-center space-x-2">
                 <User className="h-4 w-4" />
@@ -140,10 +147,28 @@ export const RequestDetails: React.FC<Props> = ({ data }) => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">User Agent:</span>
-                  <span className="text-white font-mono text-xs">{data.meta.userAgent?.slice(0, 40)}...</span>
+                  <span className="text-white font-mono ">{data.meta.userAgent?.slice(0, 40)}...</span>
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'query' && (
+          <div className="space-y-4">
+            <h3 className="text-xl font-medium text-gray-300">Query Parameters</h3>
+            {Object.keys(data.queryParams).length > 0 ? (
+              <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm">
+                {Object.entries(data.queryParams).map(([key, value]) => (
+                  <div key={key} className="flex space-y-2 py-1 border-b border-gray-700/30 last:border-0">
+                    <span className="text-blue-400">{key}:</span>
+                    <span className="text-gray-300 ml-4 break-all">{value}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-400 italic">No query parameters found</p>
+            )}
           </div>
         )}
 
@@ -192,7 +217,7 @@ export const RequestDetails: React.FC<Props> = ({ data }) => {
 
         {activeTab === 'request' && (
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-gray-300">Request Body</h3>
+            <h3 className="text-xl font-medium text-gray-300">Request Body</h3>
             <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm">
               {data.request.body ? (
                 <pre className="text-sm text-green-300 p-3 rounded overflow-x-auto whitespace-pre-wrap">
@@ -250,7 +275,7 @@ export const RequestDetails: React.FC<Props> = ({ data }) => {
 
         {activeTab === 'response' && (
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-gray-300">Response Body</h3>
+            <h3 className="text-xl font-medium text-gray-300">Response Body</h3>
             <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm">
               <pre className="text-sm text-green-300 p-3 rounded overflow-x-auto whitespace-pre-wrap">
                 {(() => {

@@ -22,6 +22,8 @@ interface User {
     email: string | null;
     displayName: string | null;
     photoURL: string | null;
+    apiKey: string | null;
+    apiCreatedAt: string | null;
 }
 
 interface AuthContextType {
@@ -57,13 +59,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
             if (firebaseUser) {
                 const { uid, email, displayName, photoURL } = firebaseUser;
-                setUser({ uid, email, displayName, photoURL });
-                await axios.post("/api/users/register", {
-                    name: displayName,
-                    email,
-                    uid,
-                    photoURL: photoURL || null,
-                });
+
+                try {
+                    const res = await axios.get(`/api/key/get/${uid}`);
+                    const { status, apiKey, apiCreatedAt } = res.data;
+
+                    setUser({
+                        uid,
+                        email,
+                        displayName,
+                        photoURL,
+                        apiKey: status ? apiKey : null,
+                        apiCreatedAt: status ? new Date(apiCreatedAt).toLocaleString() : null,
+                    });
+                } catch (err) {
+                    console.error("Failed to fetch API key:", err);
+                    setUser({
+                        uid,
+                        email,
+                        displayName,
+                        photoURL,
+                        apiKey: null,
+                        apiCreatedAt: null,
+                    });
+                }
             } else {
                 setUser(null);
             }

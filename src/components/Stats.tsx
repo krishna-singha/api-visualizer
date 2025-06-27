@@ -1,84 +1,108 @@
-import React from 'react';
-import { Activity, Clock, AlertTriangle, CheckCircle, XCircle, Zap } from 'lucide-react';
-// import type { ApiRequest } from '../types/api';
-import type { ApiData } from '../hooks/useSocket';
+import React from "react";
+import {
+  Activity,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Zap,
+} from "lucide-react";
+import type { ApiData } from "../context/SocketContext";
 
 interface Props {
   data: ApiData[];
 }
 
-export const Stats: React.FC<Props> = ({ data }) => {
+export const Stats: React.FC<Props> = React.memo(({ data }) => {
   const totalRequests = data.length;
-  const successfulRequests = data.filter(r => r.status >= 200 && r.status < 400).length;
-  const errorRequests = data.filter(r => r.status >= 400).length;
-  const avgResponseTime = data.length > 0 
-    ? Math.round(data.reduce((sum, r) => sum + r.duration, 0) / data.length)
-    : 0;
 
-  const recentRequests = data.slice(0, 10);
-  const recentAvgTime = recentRequests.length > 0
-    ? Math.round(recentRequests.reduce((sum, r) => sum + r.duration, 0) / recentRequests.length)
-    : 0;
+  const successfulRequests = data.filter(
+    (r) => r.status >= 200 && r.status < 400
+  ).length;
 
-  const requestsPerMinute = data.filter(r => 
-    Date.now() - r.timestamp < 60000
+  const errorRequests = data.filter((r) => r.status >= 400).length;
+
+  const avgResponseTime =
+    totalRequests > 0
+      ? Math.round(
+          data.reduce((sum, r) => sum + (r.duration || 0), 0) / totalRequests
+        )
+      : 0;
+
+  const recentRequests = data
+    .filter((r) => r.timestamp && Date.now() - r.timestamp < 5 * 60 * 1000) // last 5 mins
+    .slice(0, 10);
+
+  const recentAvgTime =
+    recentRequests.length > 0
+      ? Math.round(
+          recentRequests.reduce((sum, r) => sum + (r.duration || 0), 0) /
+            recentRequests.length
+        )
+      : 0;
+
+  const requestsPerMinute = data.filter(
+    (r) => r.timestamp && Date.now() - r.timestamp < 60 * 1000
   ).length;
 
   const stats = [
     {
       icon: Activity,
-      label: 'Total Requests',
+      label: "Total Requests",
       value: totalRequests.toString(),
-      color: 'text-blue-400',
-      bgColor: 'bg-blue-500/20',
-      borderColor: 'border-blue-500/30',
+      color: "text-blue-400",
+      bgColor: "bg-blue-500/20",
+      borderColor: "border-blue-500/30",
     },
     {
       icon: CheckCircle,
-      label: 'Successful',
+      label: "Successful",
       value: successfulRequests.toString(),
-      color: 'text-emerald-400',
-      bgColor: 'bg-emerald-500/20',
-      borderColor: 'border-emerald-500/30',
+      color: "text-emerald-400",
+      bgColor: "bg-emerald-500/20",
+      borderColor: "border-emerald-500/30",
     },
     {
       icon: XCircle,
-      label: 'Errors',
+      label: "Errors",
       value: errorRequests.toString(),
-      color: 'text-red-400',
-      bgColor: 'bg-red-500/20',
-      borderColor: 'border-red-500/30',
+      color: "text-red-400",
+      bgColor: "bg-red-500/20",
+      borderColor: "border-red-500/30",
     },
     {
       icon: Clock,
-      label: 'Avg Response',
+      label: "Avg Response",
       value: `${avgResponseTime}ms`,
-      color: 'text-amber-400',
-      bgColor: 'bg-amber-500/20',
-      borderColor: 'border-amber-500/30',
+      color: "text-amber-400",
+      bgColor: "bg-amber-500/20",
+      borderColor: "border-amber-500/30",
     },
     {
       icon: Zap,
-      label: 'Recent Avg',
+      label: "Recent Avg",
       value: `${recentAvgTime}ms`,
-      color: 'text-purple-400',
-      bgColor: 'bg-purple-500/20',
-      borderColor: 'border-purple-500/30',
+      color: "text-purple-400",
+      bgColor: "bg-purple-500/20",
+      borderColor: "border-purple-500/30",
     },
     {
       icon: AlertTriangle,
-      label: 'Requests/min',
+      label: "Requests/min",
       value: requestsPerMinute.toString(),
-      color: 'text-orange-400',
-      bgColor: 'bg-orange-500/20',
-      borderColor: 'border-orange-500/30',
+      color: "text-orange-400",
+      bgColor: "bg-orange-500/20",
+      borderColor: "border-orange-500/30",
     },
   ];
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
       {stats.map(({ icon: Icon, label, value, color, bgColor, borderColor }) => (
-        <div key={label} className={`${bgColor} backdrop-blur-sm rounded-xl border ${borderColor} p-4 transition-all duration-200 hover:scale-105`}>
+        <div
+          key={label}
+          className={`${bgColor} backdrop-blur-sm rounded-xl border ${borderColor} p-4 transition-all duration-200 hover:scale-105`}
+        >
           <div className="flex items-center space-x-3">
             <Icon className={`h-5 w-5 ${color}`} />
             <div>
@@ -90,4 +114,6 @@ export const Stats: React.FC<Props> = ({ data }) => {
       ))}
     </div>
   );
-};
+});
+
+Stats.displayName = "Stats";
