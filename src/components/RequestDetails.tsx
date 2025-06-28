@@ -157,10 +157,13 @@ export const RequestDetails: React.FC<Props> = ({ data }) => {
         {activeTab === 'query' && (
           <div className="space-y-4">
             <h3 className="text-xl font-medium text-gray-300">Query Parameters</h3>
-            {Object.keys(data.queryParams).length > 0 ? (
+            {Object.keys(data.queryParams || {}).length > 0 ? (
               <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm">
-                {Object.entries(data.queryParams).map(([key, value]) => (
-                  <div key={key} className="flex space-y-2 py-1 border-b border-gray-700/30 last:border-0">
+                {Object.entries(data.queryParams || {}).map(([key, value]) => (
+                  <div
+                    key={key}
+                    className="flex space-y-2 py-1 border-b border-gray-700/30 last:border-0"
+                  >
                     <span className="text-blue-400">{key}:</span>
                     <span className="text-gray-300 ml-4 break-all">{value}</span>
                   </div>
