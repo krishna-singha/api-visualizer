@@ -84,7 +84,7 @@ interface SocketContextType {
 const SocketContext = createContext<SocketContextType | null>(null);
 
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
-  const [ws, setWs] = useState<WebSocket | null>(null);
+  const [, setWs] = useState<WebSocket | null>(null);
   const [data, setData] = useState<ApiData[]>([]);
   const [connectionStatus, setConnectionStatus] = useState(false);
 

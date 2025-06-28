@@ -9,7 +9,7 @@ import { useSocketContext } from '../context/SocketContext';
 const Navbar = () => {
 
     const location = useLocation();
-    const { user, login, logout, loading } = useAuth();
+    const { user, login, logout } = useAuth();
 
     const { connectionStatus } = useSocketContext();
     
