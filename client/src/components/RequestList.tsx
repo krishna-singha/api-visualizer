@@ -41,7 +41,7 @@ export const RequestList: React.FC<Props> = ({ data, selectedRequest, onSelectRe
         </h2>
       </div>
       
-      <div className="max-h-96 overflow-y-auto">
+      <div className="min-h-96 max-h-[30rem] overflow-y-auto">
         {data.length === 0 ? (
           <div className="p-8 text-center text-gray-400">
             <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />

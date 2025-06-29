@@ -81,7 +81,7 @@ export function parseToApiData(rawData: any): ApiData {
   const reqContentType = reqHeaders["content-type"] || "";
   const resContentType = resHeaders["content-type"] || "";
 
-  const parsedAuth = parseAuthHeader(reqHeaders.authorization || "");
+  const parsedAuth = parseAuthHeader(reqHeaders || "");
   const userAgent = reqHeaders["user-agent"] || "";
 
   return {
@@ -118,11 +118,12 @@ export function parseToApiData(rawData: any): ApiData {
         : [],
     },
     authorization: {
-      hasAuthHeader: !!reqHeaders.authorization,
+      hasAuthHeader: parsedAuth?.hasAuthHeader || false,
       authType: parsedAuth?.authType || null,
       parsed: parsedAuth?.parsed || null,
-      raw: reqHeaders.authorization || null,
+      raw: parsedAuth?.raw,
     },
+
     meta: {
       ip: rawData.ip,
       clientPort: rawData.clientPort || 0,

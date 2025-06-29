@@ -10,8 +10,24 @@ interface Props {
 
 export const RequestBody: React.FC<Props> = ({ request }) => {
     const { body, contentType } = request;
+
+    if (!body) {
+        return (
+            <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                    <h3 className="text-xl font-medium text-gray-300">Request Body</h3>
+                </div>
+                <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm">
+                    <p className="text-gray-400 text-sm text-center">
+                        No Request body available.
+                    </p>
+                </div>
+            </div>
+
+        );
+    }
+
     const getFormattedCode = (): { code: string; language: string } => {
-        if (!body) return { code: '', language: 'text' };
 
         if (contentType === 'json' && typeof body === 'object') {
             try {
@@ -76,7 +92,7 @@ export const RequestBody: React.FC<Props> = ({ request }) => {
     return (
         <div className="space-y-4">
             <div className="flex items-center gap-3">
-                <h3 className="text-xl font-semibold text-white">Request Body</h3>
+                <h3 className="text-xl font-medium text-gray-300">Request Body</h3>
                 <ContentTypeBadge type={contentType} />
             </div>
 

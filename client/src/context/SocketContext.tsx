@@ -10,6 +10,7 @@ import { useAuth } from "./AuthContext";
 import axios from "axios";
 import { parseToApiData } from "../lib/parseToApiData";
 import type { ApiData } from "../lib/parseToApiData";
+
 interface SocketContextType {
   connectionStatus: boolean;
   data: ApiData[];
@@ -32,10 +33,15 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         const payload = JSON.parse(rawText);
 
         // If encrypted
-        const decrypted = await decryptJSON(payload.data, '44ca20ce1b89c832497b9a9c38e23eaf6b6f872c36891fca7616da209d147202');
-        console.log("🔓 Decrypted:", decrypted);
+        if (!user?.apiKey) {
+          throw new Error("API key is missing for decryption.");
+        }
+        const decrypted = await decryptJSON(payload.data, user.apiKey);
+        // console.log("🔓 Decrypted:", decrypted);
 
         const apiData = parseToApiData(decrypted);
+        console.log(apiData);
+        
         
         setData((prev) => [apiData, ...prev]);
 

@@ -15,10 +15,15 @@ export const RequestDetails: React.FC<Props> = ({ data }) => {
 
   if (!data) {
     return (
-      <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-8 text-center">
-        <Code className="h-16 w-16 mx-auto mb-4 text-gray-400 opacity-50" />
-        <p className="text-gray-400 text-lg">Select a request to view details</p>
-        <p className="text-gray-500 text-sm mt-2">Choose any request from the list to inspect its details</p>
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <h3 className="text-xl font-medium text-gray-300">Request Body</h3>
+        </div>
+        <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-8 text-center">
+          <Code className="h-16 w-16 mx-auto mb-4 text-gray-400 opacity-50" />
+          <p className="text-gray-400 text-lg">Select a request to view details</p>
+          <p className="text-gray-500 text-sm mt-2">Choose any request from the list to inspect its details</p>
+        </div>
       </div>
     );
   }
@@ -161,23 +166,26 @@ export const RequestDetails: React.FC<Props> = ({ data }) => {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-400 italic">No query parameters found</p>
+              <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm">
+                <p className="text-gray-400 text-sm text-center">
+                  No query parameters found.
+                </p>
+              </div>
             )}
           </div>
         )}
-
 
         {activeTab === 'authorization' && (
           <div className="space-y-4">
             <h3 className="text-xl font-medium text-gray-300">Authorization</h3>
             <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm">
               {data.authorization.hasAuthHeader ? (
-                <div className="space-y-1 text-green-300">
+                <div className="text-green-300">
                   {typeof data.authorization.parsed === 'object' && data.authorization.parsed !== null ? (
                     Object.entries(data.authorization.parsed).map(([key, value]) => (
-                      <div key={key} className="flex gap-2">
-                        <span className="text-gray-400">{key} :</span>
-                        <span className="break-all">{String(value)}</span>
+                      <div key={key} className="flex gap-2 w-full">
+                        <p className="text-gray-400 max-w-1/3 break-words">{key}:</p>
+                        <p className="break-all">{String(value)}</p>
                       </div>
                     ))
                   ) : (
@@ -185,36 +193,45 @@ export const RequestDetails: React.FC<Props> = ({ data }) => {
                   )}
                 </div>
               ) : (
-                <p className="text-gray-400 italic">No authorization details</p>
+                <p className="text-gray-400 text-sm text-center">
+                  No authorization details
+                </p>
               )}
             </div>
           </div>
         )}
-
 
         {activeTab === 'headers' && (
           <>
             <div className="space-y-4">
               <h3 className="text-xl font-medium text-gray-300">Request Headers</h3>
               <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm">
-                {Object.entries(data.request.headers).map(([key, value]) => (
-                  <div key={key} className="flex gap-4 py-2 border-b border-gray-700/30 last:border-0">
-                    <span className="text-blue-400 max-w-1/3">{key} :</span>
-                    <span className="text-gray-300 break-all">{value}</span>
-                  </div>
-                ))}
+                {Object.entries(data.request.headers)
+                  .filter(([key]) =>
+                    !["authorization", "x-api-key", "x-access-token", "x-client-id", "x-client-secret"].includes(key.toLowerCase())
+                  )
+                  .map(([key, value]) => (
+                    <div key={key} className="flex gap-4 py-2 border-b border-gray-700/30 last:border-0">
+                      <span className="text-blue-400 max-w-1/3">{key} :</span>
+                      <span className="text-gray-300 break-all">{value}</span>
+                    </div>
+                  ))}
               </div>
             </div>
 
             <div className="space-y-4 mt-6">
               <h3 className="text-xl font-medium text-gray-300">Response Headers</h3>
               <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm">
-                {Object.entries(data.response.headers).map(([key, value]) => (
-                  <div key={key} className="flex space-y-2 py-1 border-b border-gray-700/30 last:border-0">
-                    <span className="text-blue-400">{key}:</span>
-                    <span className="text-gray-300 ml-4 break-all">{value}</span>
-                  </div>
-                ))}
+                {Object.entries(data.response.headers)
+                  .filter(([key]) =>
+                    !["authorization", "x-api-key", "x-access-token", "x-client-id", "x-client-secret"].includes(key.toLowerCase())
+                  )
+                  .map(([key, value]) => (
+                    <div key={key} className="flex space-y-2 py-1 border-b border-gray-700/30 last:border-0">
+                      <span className="text-blue-400">{key}:</span>
+                      <span className="text-gray-300 ml-4 break-all">{value}</span>
+                    </div>
+                  ))}
               </div>
             </div>
           </>

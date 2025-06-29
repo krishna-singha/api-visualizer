@@ -1,12 +1,18 @@
-export function parseAuthHeader(
-  headers: Record<string, string | string[] | undefined>
-): {
+export interface ParsedAuthResult {
   hasAuthHeader: boolean;
   authType: string | null;
   parsed: Record<string, any> | null;
   raw?: string;
-} {
-  const rawAuthValue = headers["authorization"];
+}
+
+export function parseAuthHeader(
+  headers: Record<string, string | string[] | undefined>
+): ParsedAuthResult {
+  const rawAuthValue =
+  headers["authorization"] ??
+  headers["Authorization"] ??
+  headers["AUTHORIZATION"];
+
   const rawAuth =
     typeof rawAuthValue === "string"
       ? rawAuthValue
@@ -14,12 +20,7 @@ export function parseAuthHeader(
       ? rawAuthValue[0]
       : undefined;
 
-  const result: {
-    hasAuthHeader: boolean;
-    authType: string | null;
-    parsed: Record<string, any> | null;
-    raw?: string;
-  } = {
+  const result: ParsedAuthResult = {
     hasAuthHeader: !!rawAuth,
     authType: null,
     parsed: null,
@@ -43,7 +44,7 @@ export function parseAuthHeader(
   try {
     switch (type) {
       case "basic": {
-        const decoded = atob(token); // <- Use atob instead of Buffer
+        const decoded = atob(token);
         const [username, password] = decoded.split(":");
         result.parsed = { username, password };
         break;
@@ -80,11 +81,10 @@ export function parseAuthHeader(
   return result;
 }
 
-
 function tryCustomAuthHeaders(
   headers: Record<string, string | string[] | undefined>,
-  result: { hasAuthHeader: boolean; authType: string | null; parsed: any }
-) {
+  result: ParsedAuthResult
+): ParsedAuthResult {
   const custom: Record<string, string> = {};
 
   for (const key of Object.keys(headers)) {

@@ -1,8 +1,3 @@
-// src/pages/Login.tsx
-import { auth, googleProvider } from "../config/firebase";
-import { signInWithPopup } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
