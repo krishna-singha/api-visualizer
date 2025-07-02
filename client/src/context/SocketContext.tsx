@@ -37,10 +37,10 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
           throw new Error("API key is missing for decryption.");
         }
         const decrypted = await decryptJSON(payload.data, user.apiKey);
-        // console.log("🔓 Decrypted:", decrypted);
+        // console.log("Decrypted:", decrypted);
 
         const apiData = parseToApiData(decrypted);
-        console.log(apiData);
+        // console.log(apiData);
         
         
         setData((prev) => [apiData, ...prev]);
@@ -52,7 +52,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         });
 
       } catch (e) {
-        console.warn("❌ Invalid WebSocket payload:", event.data);
+        console.warn("Invalid WebSocket payload:", event.data);
       }
     },
     [user?.uid]
@@ -67,19 +67,19 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     );
 
     socket.onopen = () => {
-      console.log("✅ WebSocket connected");
+      console.log("WebSocket connected");
       setConnectionStatus(true);
     };
 
     socket.onmessage = handleMessage;
 
     socket.onclose = () => {
-      console.log("🔌 WebSocket disconnected");
+      console.log("WebSocket disconnected");
       setConnectionStatus(false);
     };
 
     socket.onerror = () => {
-      console.error("⚠️ WebSocket error");
+      console.error("WebSocket error");
       setConnectionStatus(false);
     };
 
