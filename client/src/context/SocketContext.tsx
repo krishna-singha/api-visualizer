@@ -1,15 +1,9 @@
-import {
-  createContext,
-  useContext,
-  useRef,
-  useState,
-  useCallback,
-} from "react";
-import type { ReactNode } from "react";
+import { createContext, useContext, useState, useRef, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 import axios from "axios";
 import { parseToApiData } from "../lib/parseToApiData";
 import type { ApiData } from "../lib/parseToApiData";
+import { io, Socket } from "socket.io-client";
 
 interface SocketContextType {
   connectionStatus: boolean;
@@ -20,79 +14,67 @@ interface SocketContextType {
 
 const SocketContext = createContext<SocketContextType | null>(null);
 
-export const SocketProvider = ({ children }: { children: ReactNode }) => {
+export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
   const [data, setData] = useState<ApiData[]>([]);
   const [connectionStatus, setConnectionStatus] = useState(false);
-  const { user } = useAuth();
-  const wsRef = useRef<WebSocket | null>(null);
-
-  const handleMessage = useCallback(
-    async (event: MessageEvent) => {
-      try {
-        const rawText = typeof event.data === "string" ? event.data : await event.data.text();
-        const payload = JSON.parse(rawText);
-
-        // If encrypted
-        if (!user?.apiKey) {
-          throw new Error("API key is missing for decryption.");
-        }
-        const decrypted = await decryptJSON(payload.data, user.apiKey);
-        // console.log("Decrypted:", decrypted);
-
-        const apiData = parseToApiData(decrypted);
-        // console.log(apiData);
-        
-        
-        setData((prev) => [apiData, ...prev]);
-
-        // Optional DB saving
-        await axios.post("/api/request-log/add", {
-          uid: user?.uid,
-          apiData,
-        });
-
-      } catch (e) {
-        console.warn("Invalid WebSocket payload:", event.data);
-      }
-    },
-    [user?.uid]
-  );
-
+  const socketRef = useRef<Socket | null>(null);
 
   const connect = () => {
-    if (!user?.apiKey || wsRef.current) return;
+    if (!user?.apiKey || socketRef.current) return;
 
-    const socket = new WebSocket(
-      `${import.meta.env.VITE_WS_SERVER_URL}/frontend?apiKey=${user.apiKey}`
-    );
+    const socket = io(import.meta.env.VITE_BACKEND_URL, {
+      query: {
+        apiKey: user.apiKey,
+        type: "frontend",
+      },
+      transports: ["websocket"],
+    });
 
-    socket.onopen = () => {
-      console.log("WebSocket connected");
+    socket.on("connect", () => {
       setConnectionStatus(true);
-    };
+      console.log("✅ Socket.IO connected");
+    });
 
-    socket.onmessage = handleMessage;
-
-    socket.onclose = () => {
-      console.log("WebSocket disconnected");
+    socket.on("disconnect", () => {
       setConnectionStatus(false);
-    };
+      console.log("🔌 Socket.IO disconnected");
+    });
 
-    socket.onerror = () => {
-      console.error("WebSocket error");
-      setConnectionStatus(false);
-    };
+    socket.on("connect_error", (err) => {
+      console.error("❌ Socket.IO connection error:", err.message);
+    });
 
-    wsRef.current = socket;
+    socket.on("log", async (payload: { data: string }) => {
+      try {
+        const decrypted = await decryptJSON(payload.data, user.apiKey!);
+        const apiData = parseToApiData(decrypted);
+        setData((prev) => [apiData, ...prev]);
+
+        await axios.post("/api/request-log/add", {
+          uid: user.uid,
+          apiData,
+        });
+      } catch (err) {
+        console.warn("Invalid payload:", payload);
+      }
+    });
+
+    socketRef.current = socket;
   };
+
 
   const disconnect = () => {
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-      setConnectionStatus(false);
-    }
+    socketRef.current?.disconnect();
+    socketRef.current = null;
+    setConnectionStatus(false);
   };
+
+  useEffect(() => {
+    return () => {
+      disconnect();
+    };
+  }, []);
 
   return (
     <SocketContext.Provider
@@ -136,6 +118,5 @@ async function decryptJSON(encrypted: string, secret: string): Promise<any> {
     dataWithAuthTag
   );
 
-  const decrypted = new TextDecoder().decode(decryptedBuffer);
-  return JSON.parse(decrypted);
+  return JSON.parse(new TextDecoder().decode(decryptedBuffer));
 }
