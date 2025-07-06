@@ -6,7 +6,7 @@ export const connectMongoDB = async () => {
 
   try {
     await mongoose.connect(`${MONGODB_URI}/api-visualizer`);
-    console.log("MongoDB connected successfully");
+    // console.log("MongoDB connected successfully");
   } catch (error) {
     console.error("MongoDB connection error:", error);
     throw error;

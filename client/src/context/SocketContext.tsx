@@ -7,6 +7,7 @@ import { io, Socket } from "socket.io-client";
 
 interface SocketContextType {
   connectionStatus: boolean;
+  isConnecting: boolean;
   data: ApiData[];
   historyData: ApiData[];
   historyMode: boolean;
@@ -30,7 +31,9 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     return saved !== null ? JSON.parse(saved) : false;
   });
   const [connectionStatus, setConnectionStatus] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const socketRef = useRef<Socket | null>(null);
+  const connectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Custom setter that also updates localStorage
   const setHistoryMode = (enabled: boolean) => {
@@ -57,6 +60,20 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const connect = () => {
     if (!user?.apiKey || socketRef.current) return;
 
+    setIsConnecting(true);
+    // console.log(" Connecting to API Visualizer...");
+
+    // Clear any existing timeout
+    if (connectTimeoutRef.current) {
+      clearTimeout(connectTimeoutRef.current);
+    }
+
+    // Set a timeout to stop connecting state if connection takes too long
+    connectTimeoutRef.current = setTimeout(() => {
+      setIsConnecting(false);
+      console.warn("⚠️ Connection timeout - taking longer than expected");
+    }, 10000); // 10 second timeout
+
     const socket = io(import.meta.env.VITE_BACKEND_URL, {
       query: {
         apiKey: user.apiKey,
@@ -66,17 +83,32 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     socket.on("connect", () => {
+      if (connectTimeoutRef.current) {
+        clearTimeout(connectTimeoutRef.current);
+        connectTimeoutRef.current = null;
+      }
       setConnectionStatus(true);
-      console.log("✅ Socket.IO connected");
+      setIsConnecting(false);
+      // console.log("Connected to API Visualizer");
     });
 
     socket.on("disconnect", () => {
+      if (connectTimeoutRef.current) {
+        clearTimeout(connectTimeoutRef.current);
+        connectTimeoutRef.current = null;
+      }
       setConnectionStatus(false);
-      console.log("🔌 Socket.IO disconnected");
+      setIsConnecting(false);
+      // console.log("Disconnected from API Visualizer");
     });
 
     socket.on("connect_error", (err) => {
-      console.error("❌ Socket.IO connection error:", err.message);
+      if (connectTimeoutRef.current) {
+        clearTimeout(connectTimeoutRef.current);
+        connectTimeoutRef.current = null;
+      }
+      setIsConnecting(false);
+      console.error("Socket.IO connection error:", err.message);
     });
 
     socket.on("log", async (payload: { data: string }) => {
@@ -102,13 +134,22 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
 
   const disconnect = () => {
+    setIsConnecting(false);
+    if (connectTimeoutRef.current) {
+      clearTimeout(connectTimeoutRef.current);
+      connectTimeoutRef.current = null;
+    }
     socketRef.current?.disconnect();
     socketRef.current = null;
     setConnectionStatus(false);
+    // console.log("Manually disconnected from API Visualizer");
   };
 
   useEffect(() => {
     return () => {
+      if (connectTimeoutRef.current) {
+        clearTimeout(connectTimeoutRef.current);
+      }
       disconnect();
     };
   }, []);
@@ -117,6 +158,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     <SocketContext.Provider
       value={{
         connectionStatus,
+        isConnecting,
         data,
         historyData,
         historyMode,

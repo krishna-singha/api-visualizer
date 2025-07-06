@@ -1,4 +1,5 @@
 import { Server as HttpServer } from "http";
+import { connect } from "http2";
 import { Server as IOServer, Socket } from "socket.io";
 
 interface ClientMap {
@@ -26,10 +27,10 @@ export const setupTunnelServer = (server: HttpServer) => {
 
     if (type === "frontend") {
       conn.frontend = socket;
-      console.log("✅ Frontend connected:", apiKey);
+      // console.log("✅ Frontend connected:", apiKey);
     } else if (type === "agent") {
       conn.agent = socket;
-      console.log("✅ Agent connected:", apiKey);
+      // console.log("✅ Agent connected:", apiKey);
 
       socket.on("log", (payload) => {
         if (conn.frontend?.connected) {

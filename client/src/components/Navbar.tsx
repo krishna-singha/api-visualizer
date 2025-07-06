@@ -11,7 +11,7 @@ const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { user, logout } = useAuth();
-    const { connectionStatus, disconnect, connect, clearAllData, historyMode, setHistoryMode } = useSocketContext();
+    const { connectionStatus, isConnecting, disconnect, connect, clearAllData, historyMode, setHistoryMode } = useSocketContext();
 
     const [openProfile, setOpenProfile] = useState(false);
     const [openConnection, setOpenConnection] = useState(false);
@@ -38,12 +38,6 @@ const Navbar = () => {
     const handleToggleHistory = () => {
         const newHistoryMode = !historyMode;
         setHistoryMode(newHistoryMode);
-        
-        if (newHistoryMode) {
-            console.log("✅ History mode enabled - Request logs will be saved to database");
-        } else {
-            console.log("🚫 History mode disabled - Request logs will only show in frontend (cleared on refresh)");
-        }
     };
 
     const handleClearLogs = () => {
@@ -91,21 +85,35 @@ const Navbar = () => {
                                 {/* Connection Dropdown */}
                                 <div className="relative">
                                     <button onClick={toggleOpenConnection} className="cursor-pointer">
-                                        <ConnectionStatus status={connectionStatus} />
+                                        <ConnectionStatus status={connectionStatus} isConnecting={isConnecting} />
                                     </button>
                                     {openConnection && (
                                         <div className="absolute right-0 mt-3 w-56 bg-gray-900 text-white rounded-xl border border-gray-700 shadow-lg p-4 space-y-4 z-50">
                                             <h3 className="text-sm font-semibold text-gray-300">
-                                                {connectionStatus ? "Want to Disconnect?" : "Want to Connect?"}
+                                                {isConnecting 
+                                                    ? "Connecting..." 
+                                                    : connectionStatus 
+                                                        ? "Want to Disconnect?" 
+                                                        : "Want to Connect?"
+                                                }
                                             </h3>
                                             <button
                                                 onClick={connectionStatus ? disconnect : connect}
-                                                className={`cursor-pointer w-full py-2 rounded-lg text-sm font-medium transition ${connectionStatus
-                                                    ? "bg-red-500 hover:bg-red-600"
-                                                    : "bg-emerald-500 hover:bg-emerald-600"
-                                                    }`}
+                                                disabled={isConnecting}
+                                                className={`cursor-pointer w-full py-2 rounded-lg text-sm font-medium transition ${
+                                                    isConnecting 
+                                                        ? "bg-gray-600 cursor-not-allowed opacity-50"
+                                                        : connectionStatus
+                                                            ? "bg-red-500 hover:bg-red-600"
+                                                            : "bg-emerald-500 hover:bg-emerald-600"
+                                                }`}
                                             >
-                                                {connectionStatus ? "Disconnect" : "Connect"}
+                                                {isConnecting 
+                                                    ? "Connecting..." 
+                                                    : connectionStatus 
+                                                        ? "Disconnect" 
+                                                        : "Connect"
+                                                }
                                             </button>
                                         </div>
                                     )}
