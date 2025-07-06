@@ -3,7 +3,10 @@ import User from "../models/User";
 import { Request, Response } from "express";
 
 // To add request log in database
-export const addRequestLogs = async (req: Request, res: Response): Promise<any> => {
+export const addRequestLogs = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
     const { uid, apiData } = req.body;
 
@@ -23,7 +26,6 @@ export const addRequestLogs = async (req: Request, res: Response): Promise<any> 
     }
 
     const existing = await RequestLogs.findOne({ uid });
-    
 
     if (!existing) {
       await RequestLogs.create({ uid, requests: [apiData] });
@@ -48,9 +50,11 @@ export const addRequestLogs = async (req: Request, res: Response): Promise<any> 
   }
 };
 
-
 // TO fetch request logs from database
-export const fetchRequestLogs = async (req: Request, res: Response): Promise<any> => {
+export const fetchRequestLogs = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
     const { uid } = req.params;
 
@@ -62,7 +66,7 @@ export const fetchRequestLogs = async (req: Request, res: Response): Promise<any
     }
 
     const user = await RequestLogs.findOne({ uid });
-    if(!user){
+    if (!user) {
       return res.status(400).json({
         status: false,
         error: "No Request log found",
@@ -73,14 +77,50 @@ export const fetchRequestLogs = async (req: Request, res: Response): Promise<any
       status: true,
       data: user.requests,
       message: "Request log found.",
-    });    
-
-  }
-  catch (error) {
+    });
+  } catch (error) {
     console.error("❌ Error saving request logs:", error);
     return res.status(500).json({
       status: false,
       error: "Internal server error.",
     });
   }
-}
+};
+
+// To clear all request logs of a user
+export const clearRequestLogs = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { uid } = req.params;
+
+    if (!uid) {
+      return res.status(400).json({
+        status: false,
+        error: "uid required.",
+      });
+    }
+
+    const userLogs = await RequestLogs.findOne({ uid });
+    if (!userLogs) {
+      return res.status(400).json({
+        status: false,
+        error: "No Request log found",
+      });
+    }
+
+    userLogs.requests = [];
+    await userLogs.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "Request logs cleared successfully.",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      error: "Internal server error.",
+    });
+  }
+};

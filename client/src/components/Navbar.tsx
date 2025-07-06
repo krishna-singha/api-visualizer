@@ -5,17 +5,17 @@ import DEFAULT_AVATAR from "../assets/photos/defaultAvatar";
 import { useAuth } from "../context/AuthContext";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useSocketContext } from "../context/SocketContext";
+import axios from "axios";
 
 const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { user, logout } = useAuth();
-    const { connectionStatus, disconnect, connect } = useSocketContext();
+    const { connectionStatus, disconnect, connect, clearAllData, historyMode, setHistoryMode } = useSocketContext();
 
     const [openProfile, setOpenProfile] = useState(false);
     const [openConnection, setOpenConnection] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
-    const [historyMode, setHistoryMode] = useState(false);
 
     const toggleProfile = () => {
         setOpenProfile(!openProfile);
@@ -35,9 +35,29 @@ const Navbar = () => {
         setOpenConnection(false);
     };
 
+    const handleToggleHistory = () => {
+        const newHistoryMode = !historyMode;
+        setHistoryMode(newHistoryMode);
+        
+        if (newHistoryMode) {
+            console.log("✅ History mode enabled - Request logs will be saved to database");
+        } else {
+            console.log("🚫 History mode disabled - Request logs will only show in frontend (cleared on refresh)");
+        }
+    };
+
     const handleClearLogs = () => {
-        // Example callback
-        console.log("Clearing logs...");
+        axios.delete(`/api/request-log/clear/${user?.uid}`)
+            .then(response => {
+                if (response.data.status) {
+                    clearAllData();
+                } else {
+                    console.error("Error clearing logs:", response.data.error);
+                }
+            })
+            .catch(error => {
+                console.error("Error clearing logs:", error);
+            });
     };
 
     return (
@@ -101,9 +121,14 @@ const Navbar = () => {
                                             <h3 className="text-sm font-semibold text-gray-300">Settings</h3>
                                             <ul className="space-y-5 text-sm">
                                                 <li className="flex items-center justify-between">
-                                                    <span>History Mode</span>
+                                                    <div className="flex flex-col">
+                                                        <span>History</span>
+                                                        <span className="text-xs text-gray-500">
+                                                            {historyMode ? "Saves to DB" : "Frontend only"}
+                                                        </span>
+                                                    </div>
                                                     <div
-                                                        onClick={() => setHistoryMode(!historyMode)}
+                                                        onClick={handleToggleHistory}
                                                         className={`w-10 h-5 flex items-center bg-gray-700 rounded-full p-[0.1rem] cursor-pointer transition ${historyMode ? "bg-blue-600" : "bg-gray-600"
                                                             }`}
                                                     >

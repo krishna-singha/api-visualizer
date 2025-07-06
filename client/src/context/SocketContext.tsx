@@ -8,8 +8,14 @@ import { io, Socket } from "socket.io-client";
 interface SocketContextType {
   connectionStatus: boolean;
   data: ApiData[];
+  historyData: ApiData[];
+  historyMode: boolean;
   connect: () => void;
   disconnect: () => void;
+  clearHistory: () => void;
+  clearAllData: () => void;
+  setHistoryData: (data: ApiData[]) => void;
+  setHistoryMode: (enabled: boolean) => void;
 }
 
 const SocketContext = createContext<SocketContextType | null>(null);
@@ -17,8 +23,36 @@ const SocketContext = createContext<SocketContextType | null>(null);
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   const [data, setData] = useState<ApiData[]>([]);
+  const [historyData, setHistoryData] = useState<ApiData[]>([]);
+  const [historyMode, setHistoryModeState] = useState(() => {
+    // Get initial value from localStorage, default to false
+    const saved = localStorage.getItem('history-mode');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
   const [connectionStatus, setConnectionStatus] = useState(false);
   const socketRef = useRef<Socket | null>(null);
+
+  // Custom setter that also updates localStorage
+  const setHistoryMode = (enabled: boolean) => {
+    setHistoryModeState(enabled);
+    localStorage.setItem('history-mode', JSON.stringify(enabled));
+  };
+
+  const clearHistory = () => {
+    setHistoryData([]);
+  };
+
+  const clearAllData = () => {
+    setHistoryData([]);
+    setData([]);
+  };
+
+  // Clear history data when history mode is disabled
+  useEffect(() => {
+    if (!historyMode) {
+      setHistoryData([]);
+    }
+  }, [historyMode]);
 
   const connect = () => {
     if (!user?.apiKey || socketRef.current) return;
@@ -51,10 +85,13 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         const apiData = parseToApiData(decrypted);
         setData((prev) => [apiData, ...prev]);
 
-        await axios.post("/api/request-log/add", {
-          uid: user.uid,
-          apiData,
-        });
+        // Only save to database if history mode is enabled
+        if (historyMode) {
+          await axios.post("/api/request-log/add", {
+            uid: user.uid,
+            apiData,
+          });
+        }
       } catch (err) {
         console.warn("Invalid payload:", payload);
       }
@@ -81,8 +118,14 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         connectionStatus,
         data,
+        historyData,
+        historyMode,
         connect,
         disconnect,
+        clearHistory,
+        clearAllData,
+        setHistoryData,
+        setHistoryMode,
       }}
     >
       {children}

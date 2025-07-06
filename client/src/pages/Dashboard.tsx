@@ -11,7 +11,7 @@ import { useAuth } from "../context/AuthContext";
 
 const DashBoard = () => {
   const { user } = useAuth();
-  const { data: liveData } = useSocketContext();
+  const { data: liveData, historyData, setHistoryData, historyMode } = useSocketContext();
 
   const [selectedRequest, setSelectedRequest] = useState<ApiData | null>(null);
   const [filters, setFilters] = useState<FilterOptions>({
@@ -20,11 +20,15 @@ const DashBoard = () => {
     search: "",
   });
 
-  const [historyData, setHistoryData] = useState<ApiData[]>([]);
-
   useEffect(() => {
     const fetchHistory = async () => {
-      if (!user?.uid) return;
+      if (!user?.uid || !historyMode) {
+        // If history mode is disabled, clear any existing history data
+        if (!historyMode) {
+          setHistoryData([]);
+        }
+        return;
+      }
 
       try {
         const res = await axios.get(`/api/request-log/get/${user.uid}`);
@@ -38,18 +42,20 @@ const DashBoard = () => {
     };
 
     fetchHistory();
-  }, [user?.uid]);
+  }, [user?.uid, setHistoryData, historyMode]);
 
   // Combine history and live data (remove duplicates by ID)
   const combinedData = useMemo(() => {
     const seen = new Set();
-    const merged = [...liveData, ...historyData].filter((item) => {
+    // Only include history data if history mode is enabled
+    const dataToMerge = historyMode ? [...liveData, ...historyData] : [...liveData];
+    const merged = dataToMerge.filter((item) => {
       if (seen.has(item.timestamp)) return false;
       seen.add(item.timestamp);
       return true;
     });
     return merged;
-  }, [liveData, historyData]);
+  }, [liveData, historyData, historyMode]);
 
 
   const filteredRequests = useMemo(() => {
@@ -77,6 +83,20 @@ const DashBoard = () => {
     });
   }, [combinedData, filters]);
 
+
+  // Clear selected request if it was from history data when history is cleared
+  useEffect(() => {
+    if (selectedRequest && historyData.length === 0 && liveData.length === 0) {
+      // If both history and live data are empty, clear the selected request
+      setSelectedRequest(null);
+    } else if (selectedRequest && historyData.length === 0) {
+      // Check if the selected request exists in live data
+      const existsInLiveData = liveData.some(request => request.timestamp === selectedRequest.timestamp);
+      if (!existsInLiveData) {
+        setSelectedRequest(null);
+      }
+    }
+  }, [historyData, liveData, selectedRequest]);
 
   return (
     <div className="space-y-8 py-8 w-full">

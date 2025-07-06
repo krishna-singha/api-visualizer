@@ -6,7 +6,7 @@ import npm from "../assets/photos/npm.png";
 const LandingPage = () => {
   return (
     <main className="w-full flex-1 text-white py-16 px-6 sm:px-12">
-      {/* 🚀 Hero Section */}
+      {/* Hero Section */}
       <section className="text-center mb-24">
         <h1 className="text-5xl md:text-7xl font-bold mb-6">
           Inspect API Requests Live 🚦
@@ -19,18 +19,18 @@ const LandingPage = () => {
             to="/dashboard"
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-medium transition"
           >
-            🚀 Launch Dashboard
+            Launch Dashboard
           </NavLink>
           <NavLink
             to="https://www.npmjs.com/package/api-visualizer"
             className="border border-blue-600 text-blue-600 px-6 py-3 rounded-md font-medium hover:bg-blue-50 transition"
           >
-            📦 Download Agent
+            Download Middleware
           </NavLink>
         </div>
       </section>
 
-      {/* 🌟 Features */}
+      {/* Features */}
       <section className="mb-24">
         <h2 className="text-3xl font-semibold mb-6">Why Use API Visualizer?</h2>
         <div className="grid md:grid-cols-3 gap-8 text-left text-gray-300">
@@ -40,7 +40,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 📊 Dashboard Preview */}
+      {/* Dashboard Preview */}
       <section className="mb-24">
         <h2 className="text-3xl font-semibold mb-6">Powerful Visual Dashboard</h2>
         <div className="flex flex-col-reverse md:flex-row items-center gap-10">
@@ -57,7 +57,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 🎥 Real-Time Streaming */}
+      {/* Real-Time Streaming */}
       <section className="mb-24">
         <h2 className="text-3xl font-semibold mb-6">Real-Time Streaming</h2>
         <div className="flex flex-col md:flex-row items-center gap-10">
@@ -81,7 +81,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 📦 NPM Package */}
+      {/* NPM Package */}
       <section className="mb-24">
         <h2 className="text-3xl font-semibold mb-6">Install via NPM</h2>
         <div className="flex flex-col-reverse md:flex-row items-center gap-10">
@@ -97,17 +97,17 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 🧠 How It Works */}
+      {/* How It Works */}
       <section className="mb-24">
         <h2 className="text-3xl font-semibold mb-6 text-center">How It Works</h2>
         <div className="grid md:grid-cols-3 gap-8 text-gray-300 text-center">
-          <Step number={1} title="Install Agent" text="Install from npm and import in your server code." />
+          <Step number={1} title="Install Middleware" text="Install from npm and import in your server code." />
           <Step number={2} title="Connect with Key" text="Use your API key to start sending data securely." />
           <Step number={3} title="See Logs Live" text="All requests made to localhost show up in real time." />
         </div>
       </section>
 
-      {/* 🧪 CLI Example */}
+      {/* CLI Example */}
       <section className="mb-24 flex flex-col">
         <h2 className="text-3xl font-semibold mb-6 text-center">Quick Install</h2>
         <div className="bg-gray-900 border border-gray-700 rounded-lg py-6 px-10 mx-auto text-green-400 font-mono text-sm text-center">
@@ -116,17 +116,17 @@ const LandingPage = () => {
         <p className="text-center text-gray-500 mt-4">Currently supports Express.js with Node.js.</p>
       </section>
 
-      {/* ❓ FAQ */}
+      {/* FAQ */}
       <section className="mb-24 max-w-3xl mx-auto">
         <h2 className="text-3xl font-semibold mb-6 text-center">FAQs</h2>
-        <FAQ q="Does it store my data?" a="No, everything runs in-memory unless you enable persistent logging in the future." />
+        <FAQ q="Does it store my data?" a="No, unless you enable History." />
         <FAQ q="Is it production-safe?" a="This tool is intended for development only." />
       </section>
 
-      {/* 🎯 CTA */}
+      {/* CTA */}
       <section className="text-center mb-10">
         <h2 className="text-3xl font-semibold mb-4">Start Monitoring Your APIs</h2>
-        <p className="text-gray-400 mb-6">Launch the dashboard or install the agent to begin.</p>
+        <p className="text-gray-400 mb-6">Launch the dashboard or install the middleware to begin.</p>
         <div className="flex justify-center gap-4">
           <NavLink to="/dashboard" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-medium transition">
             Open Dashboard
@@ -160,7 +160,7 @@ const Step = ({ number, title, text }: { number: number; title: string; text: st
 );
 
 const FAQ = ({ q, a }: { q: string; a: string }) => (
-  <div className="mb-6">
+  <div className="mb-6 text-center">
     <h3 className="text-lg font-medium text-white">{q}</h3>
     <p className="text-gray-400 mt-1">{a}</p>
   </div>
