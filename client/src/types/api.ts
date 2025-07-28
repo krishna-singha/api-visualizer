@@ -42,7 +42,6 @@ export interface ApiData {
     headers: Record<string, string>;
     contentType: string;
     charset: string | null;
-    rawBodyBase64?: string;
     body: any;
     bodyType:
       | "json"
@@ -69,7 +68,6 @@ export interface ApiData {
       token?: string;
       [key: string]: any;
     } | null;
-    raw?: string;
   };
   meta: {
     ip: string;

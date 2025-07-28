@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Activity, Settings, KeyRound } from "lucide-react";
 import { ConnectionStatus } from "./ConnectionStatus";
 import DEFAULT_AVATAR from "../assets/photos/defaultAvatar";
@@ -7,51 +7,59 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useSocketContext } from "../context/SocketContext";
 import axios from "axios";
 
+const useOutsideClick = (refs: React.RefObject<HTMLElement>[], onClickOutside: () => void) => {
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (refs.every(ref => ref.current && !ref.current.contains(e.target as Node))) {
+                onClickOutside();
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, [refs, onClickOutside]);
+};
+
 const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { user, logout } = useAuth();
-    const { connectionStatus, isConnecting, disconnect, connect, clearAllData, historyMode, setHistoryMode } = useSocketContext();
+    const {
+        connectionStatus,
+        isConnecting,
+        disconnect,
+        connect,
+        clearAllData,
+        historyMode,
+        setHistoryMode,
+    } = useSocketContext();
 
-    const [openProfile, setOpenProfile] = useState(false);
-    const [openConnection, setOpenConnection] = useState(false);
-    const [settingsOpen, setSettingsOpen] = useState(false);
+    const [dropdowns, setDropdowns] = useState({ profile: false, connection: false, settings: false });
 
-    const toggleProfile = () => {
-        setOpenProfile(!openProfile);
-        setOpenConnection(false);
-        setSettingsOpen(false);
+    const refs = {
+        profile: useRef<HTMLDivElement>(null),
+        connection: useRef<HTMLDivElement>(null),
+        settings: useRef<HTMLDivElement>(null),
     };
 
-    const toggleOpenConnection = () => {
-        setOpenConnection(!openConnection);
-        setOpenProfile(false);
-        setSettingsOpen(false);
-    };
+    useOutsideClick(
+        Object.values(refs) as React.RefObject<HTMLElement>[],
+        () => setDropdowns({ profile: false, connection: false, settings: false })
+    );
 
-    const toggleSettings = () => {
-        setSettingsOpen(!settingsOpen);
-        setOpenProfile(false);
-        setOpenConnection(false);
-    };
 
-    const handleToggleHistory = () => {
-        const newHistoryMode = !historyMode;
-        setHistoryMode(newHistoryMode);
-    };
+    const toggle = (key: keyof typeof dropdowns) =>
+        setDropdowns(prev => ({
+            profile: key === "profile" ? !prev.profile : false,
+            connection: key === "connection" ? !prev.connection : false,
+            settings: key === "settings" ? !prev.settings : false,
+        }));
+
+    const handleToggleHistory = () => setHistoryMode(!historyMode);
 
     const handleClearLogs = () => {
         axios.delete(`/api/request-log/clear/${user?.uid}`)
-            .then(response => {
-                if (response.data.status) {
-                    clearAllData();
-                } else {
-                    console.error("Error clearing logs:", response.data.error);
-                }
-            })
-            .catch(error => {
-                console.error("Error clearing logs:", error);
-            });
+            .then(res => res.data.status ? clearAllData() : console.error("Error:", res.data.error))
+            .catch(console.error);
     };
 
     return (
@@ -72,73 +80,57 @@ const Navbar = () => {
 
                     {/* Controls */}
                     <div className="flex items-center gap-4">
-
-                        {/* API Key Button */}
-                        <NavLink to="/api-key" className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-gray-700 text-sm text-white hover:bg-gray-600">
+                        <NavLink
+                            to="/api-key"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-gray-700 text-sm text-white hover:bg-gray-600"
+                        >
                             <KeyRound size={15} />
                             API Key
                         </NavLink>
 
-                        {/* Connection Status - only on dashboard */}
                         {location.pathname === "/dashboard" && (
                             <>
-                                {/* Connection Dropdown */}
-                                <div className="relative">
-                                    <button onClick={toggleOpenConnection} className="cursor-pointer">
+                                {/* Connection */}
+                                <div className="relative" ref={refs.connection}>
+                                    <button onClick={() => toggle("connection")}>
                                         <ConnectionStatus status={connectionStatus} isConnecting={isConnecting} />
                                     </button>
-                                    {openConnection && (
+                                    {dropdowns.connection && (
                                         <div className="absolute right-0 mt-3 w-56 bg-gray-900 text-white rounded-xl border border-gray-700 shadow-lg p-4 space-y-4 z-50">
                                             <h3 className="text-sm font-semibold text-gray-300">
-                                                {isConnecting 
-                                                    ? "Connecting..." 
-                                                    : connectionStatus 
-                                                        ? "Want to Disconnect?" 
-                                                        : "Want to Connect?"
-                                                }
+                                                {isConnecting ? "Connecting..." : connectionStatus ? "Want to Disconnect?" : "Want to Connect?"}
                                             </h3>
                                             <button
                                                 onClick={connectionStatus ? disconnect : connect}
                                                 disabled={isConnecting}
-                                                className={`cursor-pointer w-full py-2 rounded-lg text-sm font-medium transition ${
-                                                    isConnecting 
-                                                        ? "bg-gray-600 cursor-not-allowed opacity-50"
-                                                        : connectionStatus
-                                                            ? "bg-red-500 hover:bg-red-600"
-                                                            : "bg-emerald-500 hover:bg-emerald-600"
-                                                }`}
+                                                className={`cursor-pointer w-full py-2 rounded-lg text-sm font-medium transition ${isConnecting ? "bg-gray-600 opacity-50 cursor-not-allowed"
+                                                    : connectionStatus ? "bg-red-500 hover:bg-red-600"
+                                                        : "bg-emerald-500 hover:bg-emerald-600"
+                                                    }`}
                                             >
-                                                {isConnecting 
-                                                    ? "Connecting..." 
-                                                    : connectionStatus 
-                                                        ? "Disconnect" 
-                                                        : "Connect"
-                                                }
+                                                {isConnecting ? "Connecting..." : connectionStatus ? "Disconnect" : "Connect"}
                                             </button>
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Settings Dropdown */}
-                                <div className="relative">
-                                    <button onClick={toggleSettings} className="cursor-pointer p-2 text-gray-400 hover:text-white">
+                                {/* Settings */}
+                                <div className="relative" ref={refs.settings}>
+                                    <button onClick={() => toggle("settings")} className="cursor-pointer p-2 text-gray-400 hover:text-white">
                                         <Settings className="h-5 w-5" />
                                     </button>
-                                    {settingsOpen && (
+                                    {dropdowns.settings && (
                                         <div className="absolute right-0 mt-3 w-64 bg-gray-900 text-white rounded-xl border border-gray-700 shadow-lg p-4 z-50 space-y-4">
                                             <h3 className="text-sm font-semibold text-gray-300">Settings</h3>
                                             <ul className="space-y-5 text-sm">
                                                 <li className="flex items-center justify-between">
                                                     <div className="flex flex-col">
                                                         <span>History</span>
-                                                        <span className="text-xs text-gray-500">
-                                                            {historyMode ? "Saves to DB" : "Frontend only"}
-                                                        </span>
+                                                        <span className="text-xs text-gray-500">{historyMode ? "Saves to DB" : "Frontend only"}</span>
                                                     </div>
                                                     <div
                                                         onClick={handleToggleHistory}
-                                                        className={`w-10 h-5 flex items-center bg-gray-700 rounded-full p-[0.1rem] cursor-pointer transition ${historyMode ? "bg-blue-600" : "bg-gray-600"
-                                                            }`}
+                                                        className={`w-10 h-5 flex items-center p-[0.1rem] cursor-pointer rounded-full transition bg-gray-600`}
                                                     >
                                                         <div
                                                             className={`w-4 h-4 rounded-full shadow-md transform transition ${historyMode ? "translate-x-5 bg-green-500" : "bg-white"
@@ -149,7 +141,7 @@ const Navbar = () => {
                                                 <li>
                                                     <button
                                                         onClick={handleClearLogs}
-                                                        className="cursor-pointer w-full py-2 rounded-lg bg-red-500 hover:bg-red-600 text-center transition"
+                                                        className="cursor-pointer w-full py-2 rounded-lg bg-red-500 hover:bg-red-600 transition"
                                                     >
                                                         Clear All Request Logs
                                                     </button>
@@ -161,24 +153,22 @@ const Navbar = () => {
                             </>
                         )}
 
-                        {/* Profile Avatar */}
-                        <div className="relative">
+                        {/* Profile */}
+                        <div className="relative" ref={refs.profile}>
                             <div
                                 className="w-10 h-10 border border-gray-400 rounded-full overflow-hidden p-[0.15rem] cursor-pointer bg-gray-700 flex items-center justify-center"
-                                tabIndex={0}
-                                onClick={() => (user ? toggleProfile() : navigate("/login"))}
+                                onClick={() => user ? toggle("profile") : navigate("/login")}
                             >
                                 {user?.photoURL ? (
                                     <img src={user.photoURL} alt="avatar" className="w-full h-full rounded-full object-cover" />
                                 ) : user ? (
-                                    <span className="text-white text-lg font-semibold">{user?.displayName?.[0] ?? "?"}</span>
+                                    <span className="text-white text-lg font-semibold">{user.displayName?.[0] ?? "?"}</span>
                                 ) : (
                                     <img src={DEFAULT_AVATAR} alt="avatar" className="w-full h-full rounded-full object-cover" />
                                 )}
                             </div>
 
-
-                            {user && openProfile && (
+                            {user && dropdowns.profile && (
                                 <div className="absolute right-0 mt-2 w-fit bg-gray-800 border border-gray-700 rounded-lg p-3 text-white shadow-lg z-50">
                                     <p className="text-sm mb-3">{user.email}</p>
                                     <div

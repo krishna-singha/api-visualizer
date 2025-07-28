@@ -71,7 +71,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     // Set a timeout to stop connecting state if connection takes too long
     connectTimeoutRef.current = setTimeout(() => {
       setIsConnecting(false);
-      console.warn("⚠️ Connection timeout - taking longer than expected");
+      console.warn("Connection timeout - taking longer than expected");
     }, 10000); // 10 second timeout
 
     const socket = io(import.meta.env.VITE_BACKEND_URL, {

@@ -1,12 +1,13 @@
 import { Server as HttpServer } from "http";
-import { connect } from "http2";
 import { Server as IOServer, Socket } from "socket.io";
 
+interface ClientConnection {
+  frontend?: Socket;
+  agent?: Socket;
+}
+
 interface ClientMap {
-  [apiKey: string]: {
-    frontend?: Socket;
-    agent?: Socket;
-  };
+  [apiKey: string]: ClientConnection;
 }
 
 export const clients: ClientMap = {};
@@ -20,29 +21,49 @@ export const setupTunnelServer = (server: HttpServer) => {
   });
 
   io.on("connection", (socket) => {
-    const { apiKey, type } = socket.handshake.query as { apiKey?: string; type?: string };
-    if (!apiKey || !type) return socket.disconnect();
+    const { apiKey, type } = socket.handshake.query as {
+      apiKey?: string;
+      type?: "frontend" | "agent";
+    };
 
-    const conn = clients[apiKey] ||= {};
+    if (!apiKey || !type) {
+      console.warn("Missing apiKey or type in connection query");
+      return socket.disconnect();
+    }
+
+    const conn = (clients[apiKey] ||= {});
 
     if (type === "frontend") {
       conn.frontend = socket;
-      // console.log("✅ Frontend connected:", apiKey);
+      // console.log(`Frontend connected [${apiKey}]`);
+
     } else if (type === "agent") {
       conn.agent = socket;
-      // console.log("✅ Agent connected:", apiKey);
+      // console.log(`Agent connected [${apiKey}]`);
 
-      socket.on("log", (payload) => {
+      socket.on("log", (payload: any) => {
         if (conn.frontend?.connected) {
-          conn.frontend.emit("log", payload); // 👈 relay to frontend
+          try {
+            conn.frontend.emit("log", payload);
+          } catch (err) {
+            console.error("Failed to forward log:", err);
+          }
+        } else {
+          console.warn(`⚠️ No frontend connected for apiKey: ${apiKey}`);
         }
       });
     }
 
     socket.on("disconnect", () => {
+      // console.log(`${type} disconnected [${apiKey}]`);
+
       if (conn.frontend === socket) conn.frontend = undefined;
       if (conn.agent === socket) conn.agent = undefined;
-      if (!conn.frontend && !conn.agent) delete clients[apiKey];
+
+      if (!conn.frontend && !conn.agent) {
+        delete clients[apiKey];
+        // console.log(`Cleaned up clients[${apiKey}]`);
+      }
     });
   });
 };

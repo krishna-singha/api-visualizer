@@ -27,7 +27,6 @@ export interface ApiData {
   };
   request: {
     headers: Record<string, string>;
-    rawBodyBase64?: string;
     body: any;
     contentType: ContentType;
     charset: string | null;
@@ -48,7 +47,6 @@ export interface ApiData {
       token?: string;
       [key: string]: any;
     } | null;
-    raw?: string;
   };
   meta: {
     ip: string;
@@ -102,7 +100,6 @@ export function parseToApiData(rawData: any): ApiData {
     request: {
       headers: reqHeaders,
       body: rawData.req.body,
-      rawBodyBase64: rawData.req.raw,
       contentType: determineBodyType(reqContentType),
       charset: extractCharset(reqContentType),
     },
@@ -121,7 +118,6 @@ export function parseToApiData(rawData: any): ApiData {
       hasAuthHeader: parsedAuth?.hasAuthHeader || false,
       authType: parsedAuth?.authType || null,
       parsed: parsedAuth?.parsed || null,
-      raw: parsedAuth?.raw,
     },
 
     meta: {

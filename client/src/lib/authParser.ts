@@ -2,7 +2,6 @@ export interface ParsedAuthResult {
   hasAuthHeader: boolean;
   authType: string | null;
   parsed: Record<string, any> | null;
-  raw?: string;
 }
 
 export function parseAuthHeader(
@@ -24,7 +23,6 @@ export function parseAuthHeader(
     hasAuthHeader: !!rawAuth,
     authType: null,
     parsed: null,
-    raw: rawAuth,
   };
 
   if (!rawAuth) {
