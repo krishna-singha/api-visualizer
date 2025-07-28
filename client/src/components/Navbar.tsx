@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Activity, Settings, KeyRound } from "lucide-react";
 import { ConnectionStatus } from "./ConnectionStatus";
 import DEFAULT_AVATAR from "../assets/photos/defaultAvatar";
