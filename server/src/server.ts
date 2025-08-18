@@ -30,9 +30,9 @@ app.get("/", (_req, res) => {
   res.status(200).json({ message: "API is running" });
 });
 
-app.post("/", (req, res) => {
-  // console.log("Received test request:", req.body);
-  res.status(200).json({ message: "Test successful", data: req.body });
+// To check if the server is sleeping
+app.get("/ping", (_req, res) => {
+  res.status(200).json({ status: "ok", message: "Server is awake" });
 });
 
 app.use("/api/users", userRouter);

@@ -13,6 +13,7 @@ import { auth, googleProvider } from "../config/firebase";
 import type { ReactNode } from "react";
 import type { User as FirebaseUser } from "firebase/auth";
 import axios from "axios";
+import { X } from "lucide-react"
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 axios.defaults.baseURL = BACKEND_URL;
@@ -31,6 +32,8 @@ interface AuthContextType {
     login: () => Promise<void>;
     logout: () => Promise<void>;
     loading: boolean;
+    showTimeoutModal: boolean;
+    setShowTimeoutModal: (show: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,6 +41,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const [showTimeoutModal, setShowTimeoutModal] = useState(false);
 
     const login = async () => {
         try {
@@ -55,46 +59,105 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    // Ping backend on mount to check server is awake or not
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-            if (firebaseUser) {
-                const { uid, email, displayName, photoURL } = firebaseUser;
+        const ping = async () => {
+            let awake = false;
+            setShowTimeoutModal(true);
 
+            while (!awake) {
                 try {
-                    const res = await axios.get(`/api/key/get/${uid}`);
-                    const { status, apiKey, apiCreatedAt } = res.data;
-
-                    setUser({
-                        uid,
-                        email,
-                        displayName,
-                        photoURL,
-                        apiKey: status ? apiKey : null,
-                        apiCreatedAt: status ? new Date(apiCreatedAt).toLocaleString() : null,
-                    });
+                    const res = await axios.get("/ping", { timeout: 5000 });
+                    if (res.status === 200) {
+                        awake = true;
+                        setShowTimeoutModal(false);
+                    }
                 } catch (err) {
-                    console.error("Failed to fetch API key:", err);
-                    setUser({
-                        uid,
-                        email,
-                        displayName,
-                        photoURL,
-                        apiKey: null,
-                        apiCreatedAt: null,
-                    });
+                    await new Promise((r) => setTimeout(r, 5000));
                 }
-            } else {
-                setUser(null);
             }
-            setLoading(false);
-        });
+        };
+        ping();
+    }, []);
+
+    // Firebase auth state listener
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(
+            auth,
+            async (firebaseUser: FirebaseUser | null) => {
+                if (firebaseUser) {
+                    const { uid, email, displayName, photoURL } = firebaseUser;
+
+                    try {
+                        const res = await axios.get(`/api/key/get/${uid}`);
+                        const { status, apiKey, apiCreatedAt } = res.data;
+
+                        setUser({
+                            uid,
+                            email,
+                            displayName,
+                            photoURL,
+                            apiKey: status ? apiKey : null,
+                            apiCreatedAt: status
+                                ? new Date(apiCreatedAt).toLocaleString()
+                                : null,
+                        });
+                    } catch (err) {
+                        console.error("Failed to fetch API key:", err);
+                        setUser({
+                            uid,
+                            email,
+                            displayName,
+                            photoURL,
+                            apiKey: null,
+                            apiCreatedAt: null,
+                        });
+                    }
+                } else {
+                    setUser(null);
+                }
+                setLoading(false);
+            }
+        );
 
         return () => unsubscribe();
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, loading, showTimeoutModal, setShowTimeoutModal }}>
             {children}
+
+            {/* Timeout Modal */}
+            {showTimeoutModal && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-50">
+                    <div className="relative bg-gray-900/80 backdrop-blur-md rounded-2xl border border-gray-700 p-8 w-full max-w-md text-center text-white shadow-lg">
+
+                        <button
+                            onClick={() => setShowTimeoutModal(false)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-white transition"
+                            aria-label="Close modal"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        <h3 className="text-xl font-semibold mb-4">Connection Timeout</h3>
+                        <p className="mb-6 text-gray-300">
+                            The connection is taking longer than expected.
+                            Maybe the Backend server on Render is currently asleep.
+                            Click the button below to wake it up
+                        </p>
+
+                        <a
+                            href={import.meta.env.VITE_BACKEND_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition text-white"
+                        >
+                            Start Render Server
+                        </a>
+                    </div>
+                </div>
+            )}
         </AuthContext.Provider>
     );
 };
