@@ -8,10 +8,11 @@ import type { ApiData } from "../lib/parseToApiData";
 import { useSocketContext } from "../context/SocketContext";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import { ConnectionStatus } from "../components/ConnectionStatus";
 
 const DashBoard = () => {
   const { user } = useAuth();
-  const { data: liveData, historyData, setHistoryData, historyMode } = useSocketContext();
+  const { data: liveData, historyData, setHistoryData, historyMode, connect, disconnect, connectionStatus, isConnecting } = useSocketContext();
 
   const [selectedRequest, setSelectedRequest] = useState<ApiData | null>(null);
   const [filters, setFilters] = useState<FilterOptions>({
@@ -19,6 +20,14 @@ const DashBoard = () => {
     status: "",
     search: "",
   });
+
+  // Detect mobile screen
+  const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 1024);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -82,13 +91,32 @@ const DashBoard = () => {
   }, [historyData, liveData, selectedRequest]);
 
   return (
-    <div className="flex-1 w-full py-6 sm:py-8 px-3 sm:px-6 lg:px-10 space-y-6 sm:space-y-8">
+    <div className="flex-1 w-full py-6 sm:py-8 space-y-6 sm:space-y-8">
       <Stats data={filteredRequests} />
       <Filters filters={filters} onFiltersChange={setFilters} />
 
+      <div className="sm:hidden bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-3 md:p-6 shadow-lg w-full">
+        <div className="flex items-center gap-2 mb-6">
+          <h3 className="text-lg font-semibold text-white">Connection</h3>
+          <ConnectionStatus status={connectionStatus} isConnecting={isConnecting} />
+        </div>
+
+        <button
+          onClick={connectionStatus ? disconnect : connect}
+          disabled={isConnecting}
+          className={`cursor-pointer w-full py-2 rounded-lg text-sm font-medium transition ${isConnecting
+            ? "bg-gray-600 opacity-50 cursor-not-allowed"
+            : connectionStatus
+              ? "bg-red-500 hover:bg-red-600"
+              : "bg-emerald-500 hover:bg-emerald-600"
+            }`}
+        >
+          {isConnecting ? "Connecting..." : connectionStatus ? "Disconnect" : "Connect"}
+        </button>
+      </div>
+
       {/* Responsive layout */}
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 w-full">
-        {/* Request List (sidebar) */}
         <div className="w-full lg:w-[28rem] xl:w-[32rem] flex-shrink-0">
           <RequestList
             data={filteredRequests}
@@ -97,11 +125,36 @@ const DashBoard = () => {
           />
         </div>
 
-        {/* Request Details (main content) */}
-        <div className="flex-1 min-w-0">
-          <RequestDetails data={selectedRequest} />
-        </div>
+        {/* Request Details inline for desktop */}
+        {!isMobile && (
+          <div className="flex-1 min-w-0">
+            <RequestDetails data={selectedRequest} />
+          </div>
+        )}
       </div>
+
+      {/* Request Details Modal for mobile */}
+      {isMobile && selectedRequest && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-auto"
+          onClick={() => setSelectedRequest(null)}
+        >
+          <div
+            className="bg-gray-800 rounded-xl shadow-lg max-w-3xl w-full p-2 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-right absolute top-6 right-4 z-10">
+              <button
+                onClick={() => setSelectedRequest(null)}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white"
+              >
+                Close
+              </button>
+            </div>
+            <RequestDetails data={selectedRequest} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -24,7 +24,7 @@ export const RequestDetails: React.FC<Props> = ({ data }) => {
 
   if (!data) {
     return (
-      <div className="space-y-4 max-w-screen-md mx-auto px-2">
+      <div className="space-y-4 max-w-screen-md mx-auto">
         <div className="flex items-center gap-3">
           <h3 className="text-xl font-medium text-gray-300">Request Body</h3>
         </div>

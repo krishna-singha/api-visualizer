@@ -18,7 +18,7 @@ export const Filters: React.FC<Props> = ({ filters, onFiltersChange }) => {
   ];
 
   return (
-    <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6 shadow-lg w-full">
+    <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-3 md:p-6 shadow-lg w-full">
       {/* Header */}
       <div className="flex items-center gap-2 mb-6">
         <Filter className="h-5 w-5 text-blue-400" />
