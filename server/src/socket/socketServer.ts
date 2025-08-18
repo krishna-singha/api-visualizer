@@ -27,7 +27,7 @@ export const setupTunnelServer = (server: HttpServer) => {
     };
 
     if (!apiKey || !type) {
-      console.warn("Missing apiKey or type in connection query");
+      // console.warn("Missing apiKey or type in connection query");
       return socket.disconnect();
     }
 
@@ -46,11 +46,12 @@ export const setupTunnelServer = (server: HttpServer) => {
           try {
             conn.frontend.emit("log", payload);
           } catch (err) {
-            console.error("Failed to forward log:", err);
+            console.error("Failed to forward log");
           }
-        } else {
-          console.warn(`⚠️ No frontend connected for apiKey: ${apiKey}`);
-        }
+        } 
+        // else {
+        //   console.warn(`⚠️ No frontend connected for apiKey: ${apiKey}`);
+        // }
       });
     }
 

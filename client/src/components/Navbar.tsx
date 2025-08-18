@@ -138,49 +138,51 @@ const Navbar = () => {
                         )}
 
                         {/* Settings */}
-                        <div className="relative" ref={refs.settings}>
-                            <button
-                                onClick={() => toggle("settings")}
-                                className="cursor-pointer p-2 text-gray-400 hover:text-white"
-                            >
-                                <Settings className="h-5 w-5" />
-                            </button>
-                            {dropdowns.settings && (
-                                <div
-                                    className="absolute right-0 mt-3 w-64 bg-gray-900 text-white rounded-xl border border-gray-700 shadow-lg p-4 z-50 space-y-4"
-                                    onClick={closeAllDropdowns}
+                        {user && (
+                            <div className="relative" ref={refs.settings}>
+                                <button
+                                    onClick={() => toggle("settings")}
+                                    className="cursor-pointer p-2 text-gray-400 hover:text-white"
                                 >
-                                    <h3 className="text-sm font-semibold text-gray-300">Settings</h3>
-                                    <ul className="space-y-5 text-sm">
-                                        <li className="flex items-center justify-between">
-                                            <div className="flex flex-col">
-                                                <span>History</span>
-                                                <span className="text-xs text-gray-500">
-                                                    {historyMode ? "Saves to DB" : "Frontend only"}
-                                                </span>
-                                            </div>
-                                            <div
-                                                onClick={handleToggleHistory}
-                                                className={`w-10 h-5 flex items-center p-[0.1rem] cursor-pointer rounded-full transition bg-gray-600`}
-                                            >
+                                    <Settings className="h-5 w-5" />
+                                </button>
+                                {dropdowns.settings && (
+                                    <div
+                                        className="absolute right-0 mt-3 w-64 bg-gray-900 text-white rounded-xl border border-gray-700 shadow-lg p-4 z-50 space-y-4"
+                                        onClick={closeAllDropdowns}
+                                    >
+                                        <h3 className="text-sm font-semibold text-gray-300">Settings</h3>
+                                        <ul className="space-y-5 text-sm">
+                                            <li className="flex items-center justify-between">
+                                                <div className="flex flex-col">
+                                                    <span>History</span>
+                                                    <span className="text-xs text-gray-500">
+                                                        {historyMode ? "Saves to DB" : "Frontend only"}
+                                                    </span>
+                                                </div>
                                                 <div
-                                                    className={`w-4 h-4 rounded-full shadow-md transform transition ${historyMode ? "translate-x-5 bg-green-500" : "bg-white"
-                                                        }`}
-                                                />
-                                            </div>
-                                        </li>
-                                        <li>
-                                            <button
-                                                onClick={handleClearLogs}
-                                                className="cursor-pointer w-full py-2 rounded-lg bg-red-500 hover:bg-red-600 transition"
-                                            >
-                                                Clear All Request Logs
-                                            </button>
-                                        </li>
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
+                                                    onClick={handleToggleHistory}
+                                                    className={`w-10 h-5 flex items-center p-[0.1rem] cursor-pointer rounded-full transition bg-gray-600`}
+                                                >
+                                                    <div
+                                                        className={`w-4 h-4 rounded-full shadow-md transform transition ${historyMode ? "translate-x-5 bg-green-500" : "bg-white"
+                                                            }`}
+                                                    />
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <button
+                                                    onClick={handleClearLogs}
+                                                    className="cursor-pointer w-full py-2 rounded-lg bg-red-500 hover:bg-red-600 transition"
+                                                >
+                                                    Clear All Request Logs
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* Profile */}
                         <div className="relative" ref={refs.profile}>
@@ -250,59 +252,60 @@ const Navbar = () => {
                         </NavLink>
                     </div>
 
-                    {/* Dashboard Controls */}
-                    <div className="space-y-3 text-sm">
-                        <h3 className="text-xs uppercase text-gray-400 tracking-wider">Settings</h3>
-                        <div
-                            className="bg-gray-800 rounded-lg p-4 space-y-4 border border-gray-700"
-                            onClick={() => setMobileOpen(false)}
-                        >
-                            <div className="font-semibold text-gray-300 flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-3">
-                                    <Settings size={16} />
-                                    <div className="flex items-center gap-2">
-                                        <span>History</span>
-                                        <span className="text-xs text-gray-500">
-                                            {historyMode ? "Saves to DB" : "Frontend only"}
-                                        </span>
+                    {user && (
+                        <>
+                            <div className="space-y-3 text-sm">
+                                <h3 className="text-xs uppercase text-gray-400 tracking-wider">Settings</h3>
+                                <div
+                                    className="bg-gray-800 rounded-lg p-4 space-y-4 border border-gray-700"
+                                    onClick={() => setMobileOpen(false)}
+                                >
+                                    <div className="font-semibold text-gray-300 flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-3">
+                                            <Settings size={16} />
+                                            <div className="flex items-center gap-2">
+                                                <span>History</span>
+                                                <span className="text-xs text-gray-500">
+                                                    {historyMode ? "Saves to DB" : "Frontend only"}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            onClick={handleToggleHistory}
+                                            className="w-10 h-5 flex items-center p-[0.1rem] cursor-pointer rounded-full transition bg-gray-600"
+                                        >
+                                            <div
+                                                className={`w-4 h-4 rounded-full shadow-md transform transition ${historyMode ? "translate-x-5 bg-green-500" : "bg-white"
+                                                    }`}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
-                                <div
-                                    onClick={handleToggleHistory}
-                                    className="w-10 h-5 flex items-center p-[0.1rem] cursor-pointer rounded-full transition bg-gray-600"
-                                >
-                                    <div
-                                        className={`w-4 h-4 rounded-full shadow-md transform transition ${historyMode ? "translate-x-5 bg-green-500" : "bg-white"
-                                            }`}
-                                    />
+
+                                <div>
+                                    <button
+                                        onClick={handleClearLogs}
+                                        className="w-full py-2 rounded-lg bg-red-500 hover:bg-red-600 transition text-gray-100"
+                                    >
+                                        Clear All Request Logs
+                                    </button>
                                 </div>
                             </div>
-                        </div>
 
-                        <div>
-                            <button
-                                onClick={handleClearLogs}
-                                className="w-full py-2 rounded-lg bg-red-500 hover:bg-red-600 transition text-gray-100"
-                            >
-                                Clear All Request Logs
-                            </button>
-                        </div>
-                    </div>
+                            <div className="space-y-3" onClick={() => setMobileOpen(false)}>
+                                <h3 className="text-xs uppercase text-gray-400 tracking-wider">Profile</h3>
 
-                    {user && (
-                        <div className="space-y-3" onClick={() => setMobileOpen(false)}>
-                            <h3 className="text-xs uppercase text-gray-400 tracking-wider">Profile</h3>
-
-                            <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                                <p className="text-sm text-gray-300 mb-3">{user.email}</p>
-                                <button
-                                    onClick={handleLogout}
-                                    className="w-full py-2 rounded-lg bg-red-500 hover:bg-red-600 transition text-gray-100"
-                                >
-                                    Logout
-                                </button>
+                                <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                                    <p className="text-sm text-gray-300 mb-3">{user.email}</p>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full py-2 rounded-lg bg-red-500 hover:bg-red-600 transition text-gray-100"
+                                    >
+                                        Logout
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        </>
                     )}
                 </div>
             )}

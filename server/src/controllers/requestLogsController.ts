@@ -42,7 +42,6 @@ export const addRequestLogs = async (
       message: "Request log added successfully.",
     });
   } catch (error) {
-    console.error("❌ Error saving request logs:", error);
     return res.status(500).json({
       status: false,
       error: "Internal server error.",
@@ -79,7 +78,6 @@ export const fetchRequestLogs = async (
       message: "Request log found.",
     });
   } catch (error) {
-    console.error("❌ Error saving request logs:", error);
     return res.status(500).json({
       status: false,
       error: "Internal server error.",

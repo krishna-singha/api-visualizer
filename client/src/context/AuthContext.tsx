@@ -63,7 +63,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         const ping = async () => {
             let awake = false;
-            setShowTimeoutModal(true);
 
             while (!awake) {
                 try {
@@ -73,6 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                         setShowTimeoutModal(false);
                     }
                 } catch (err) {
+                    setShowTimeoutModal(true);
                     await new Promise((r) => setTimeout(r, 5000));
                 }
             }

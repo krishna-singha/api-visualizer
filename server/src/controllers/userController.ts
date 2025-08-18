@@ -35,7 +35,6 @@ export const addUserToDatabase = async (req: Request, res: Response): Promise<an
       message: "User added successfully.",
     });
   } catch (error) {
-    console.error("Error adding user:", error);
     return res.status(500).json({
       status: false,
       error: "Internal server error.",
@@ -68,7 +67,6 @@ export const getUserFromDatabase = async (req: Request, res: Response): Promise<
       user,
     });
   } catch (error) {
-    console.error("Error fetching user:", error);
     return res.status(500).json({
       status: false,
       error: "Internal server error.",

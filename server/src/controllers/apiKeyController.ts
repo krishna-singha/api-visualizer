@@ -31,7 +31,6 @@ export const fetchApiKey = async (
       apiCreatedAt: user.apiCreatedAt,
     });
   } catch (error) {
-    console.error("❌ Error fetch APi Key:", error);
     return res.status(500).json({
       status: false,
       error: "Internal server error.",
@@ -93,7 +92,6 @@ export const addApiKeyToDB = async (
       apiCreatedAt: user.apiCreatedAt,
     });
   } catch (err) {
-    console.error("❌ Error creating user:", err);
     return res.status(500).json({
       status: false,
       error: "Internal server error.",
@@ -138,7 +136,6 @@ export const updateApiKey = async (
       apiCreatedAt: newCreatedAt,
     });
   } catch (err) {
-    console.error("❌ Error updating API key:", err);
     return res.status(500).json({
       status: false,
       error: "Internal server error.",

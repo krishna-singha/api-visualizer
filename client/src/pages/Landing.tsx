@@ -3,12 +3,13 @@ import dashb from "../assets/photos/dashboard.png";
 import realt from "../assets/videos/real-time.mov";
 import npm from "../assets/photos/npm.png";
 import { Radio, Bug, TabletSmartphone } from "lucide-react";
+import CodeBlock from "../components/CodeBlock"
 
 const LandingPage = () => {
   return (
     <main className="w-full flex-1 text-white">
       {/* Hero Section */}
-      <section className="text-center mb-8 min-h-[calc(100vh-3rem)] flex flex-col items-center justify-center">
+      <section className="text-center mb-8 min-h-[calc(100vh-3rem)] flex flex-col items-center justify-center pb-16">
         <h1 className="text-[2.5rem] sm:text-5xl md:text-6xl font-bold mb-6">
           Inspect API Requests Live
         </h1>
@@ -99,6 +100,11 @@ const LandingPage = () => {
         </p>
         <p>It's built for simplicity — install, add middleware, and you're done.</p>
       </SectionBlock>
+
+      {/* Middleware Integration */}
+      <CodeBlock />
+
+
 
       {/* How It Works */}
       <section className="mb-20 sm:mb-24">

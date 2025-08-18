@@ -8,7 +8,7 @@ export const connectMongoDB = async () => {
     await mongoose.connect(`${MONGODB_URI}/api-visualizer`);
     // console.log("MongoDB connected successfully");
   } catch (error) {
-    console.error("MongoDB connection error:", error);
+    console.error("MongoDB connection error");
     throw error;
   }
 };
