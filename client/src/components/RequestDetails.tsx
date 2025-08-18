@@ -76,7 +76,7 @@ export const RequestDetails: React.FC<Props> = ({ data }) => {
     <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 overflow-hidden max-w-screen-lg mx-auto w-full">
       {/* Header */}
       <div className="p-4 border-b border-gray-700/50">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+        <div className="flex flex-col [@media(min-width:1024px)]:flex-row [@media(min-width:1024px)]:items-center [@media(min-width:1024px)]:justify-between mb-4 gap-2">
           <h2 className="text-lg font-semibold text-white flex items-center space-x-2">
             <Globe className="h-5 w-5 text-blue-400" />
             <span>Request Details</span>
@@ -173,9 +173,9 @@ export const RequestDetails: React.FC<Props> = ({ data }) => {
                     {data.meta.ip}
                   </span>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
-                  <span className="text-gray-400">User Agent:</span>
-                  <span className="text-white font-mono break-words sm:break-all">
+                <div className="flex flex-row sm:justify-between gap-10 sm:gap-16 md:gap-32">
+                  <span className="text-gray-400 text-nowrap">User Agent:</span>
+                  <span className="text-white font-mono truncate">
                     {data.meta.userAgent}
                   </span>
                 </div>

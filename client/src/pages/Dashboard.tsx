@@ -136,11 +136,11 @@ const DashBoard = () => {
       {/* Request Details Modal for mobile */}
       {isMobile && selectedRequest && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-auto bg-black/80"
           onClick={() => setSelectedRequest(null)}
         >
           <div
-            className="bg-gray-800 rounded-xl shadow-lg max-w-3xl w-full p-2 relative"
+            className="rounded-xl shadow-lg max-w-3xl w-full p-2 relative"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-right absolute top-6 right-4 z-10">
