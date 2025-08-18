@@ -23,13 +23,9 @@ const DashBoard = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       if (!user?.uid || !historyMode) {
-        // If history mode is disabled, clear any existing history data
-        if (!historyMode) {
-          setHistoryData([]);
-        }
+        if (!historyMode) setHistoryData([]);
         return;
       }
-
       try {
         const res = await axios.get(`/api/request-log/get/${user.uid}`);
         if (res.data?.status && Array.isArray(res.data.data)) {
@@ -37,41 +33,32 @@ const DashBoard = () => {
           setHistoryData(reversed);
         }
       } catch (error) {
-        console.error("❌ Failed to load request history:", error);
+        console.error("Failed to load request history:", error);
       }
     };
-
     fetchHistory();
   }, [user?.uid, setHistoryData, historyMode]);
 
-  // Combine history and live data (remove duplicates by ID)
   const combinedData = useMemo(() => {
     const seen = new Set();
-    // Only include history data if history mode is enabled
     const dataToMerge = historyMode ? [...liveData, ...historyData] : [...liveData];
-    const merged = dataToMerge.filter((item) => {
+    return dataToMerge.filter((item) => {
       if (seen.has(item.timestamp)) return false;
       seen.add(item.timestamp);
       return true;
     });
-    return merged;
   }, [liveData, historyData, historyMode]);
-
 
   const filteredRequests = useMemo(() => {
     return combinedData.filter((request) => {
-      // Method filter
       if (filters.method && request.method !== filters.method) return false;
 
-      // Status filter
       if (filters.status) {
         const statusPrefix = request.status.toString().charAt(0);
         if (statusPrefix !== filters.status) return false;
       }
 
-      // Search filter
       if (filters.search) {
-
         const search = filters.search.toLowerCase();
         const inUrl = request.fullUrl.toLowerCase().includes(search);
         const inReq = JSON.stringify(request.request.body || "").toLowerCase().includes(search);
@@ -83,27 +70,26 @@ const DashBoard = () => {
     });
   }, [combinedData, filters]);
 
-
-  // Clear selected request if it was from history data when history is cleared
   useEffect(() => {
     if (selectedRequest && historyData.length === 0 && liveData.length === 0) {
-      // If both history and live data are empty, clear the selected request
       setSelectedRequest(null);
     } else if (selectedRequest && historyData.length === 0) {
-      // Check if the selected request exists in live data
-      const existsInLiveData = liveData.some(request => request.timestamp === selectedRequest.timestamp);
-      if (!existsInLiveData) {
-        setSelectedRequest(null);
-      }
+      const existsInLiveData = liveData.some(
+        (request) => request.timestamp === selectedRequest.timestamp
+      );
+      if (!existsInLiveData) setSelectedRequest(null);
     }
   }, [historyData, liveData, selectedRequest]);
 
   return (
-    <div className="space-y-8 py-8 w-full">
+    <div className="flex-1 w-full py-6 sm:py-8 px-3 sm:px-6 lg:px-10 space-y-6 sm:space-y-8">
       <Stats data={filteredRequests} />
       <Filters filters={filters} onFiltersChange={setFilters} />
-      <div className="flex gap-8 w-full">
-        <div className="w-[35rem] flex-shrink-0">
+
+      {/* Responsive layout */}
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 w-full">
+        {/* Request List (sidebar) */}
+        <div className="w-full lg:w-[28rem] xl:w-[32rem] flex-shrink-0">
           <RequestList
             data={filteredRequests}
             selectedRequest={selectedRequest}
@@ -111,12 +97,10 @@ const DashBoard = () => {
           />
         </div>
 
-        <div className="flex-1 min-w-[0]">
-          <div className="w-full max-w-full">
-            <RequestDetails data={selectedRequest} />
-          </div>
+        {/* Request Details (main content) */}
+        <div className="flex-1 min-w-0">
+          <RequestDetails data={selectedRequest} />
         </div>
-
       </div>
     </div>
   );

@@ -52,7 +52,15 @@ const ApiKey = () => {
             const { status, apiKey, apiCreatedAt } = res.data;
             if (status && apiKey && apiCreatedAt) {
                 setApiKey(apiKey);
-                setCreatedAt(new Date(apiCreatedAt).toLocaleString());
+                setCreatedAt(new Date(apiCreatedAt).toLocaleString(undefined, {
+                    year: "numeric",
+                    month: "short",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: true,
+                }));
             }
         } catch (err) {
             console.error("Error regenerating API key:", err);
@@ -74,42 +82,37 @@ const ApiKey = () => {
 
     return (
         <div className="flex-1 h-full w-full mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-            <div className="max-w-2xl mx-auto w-full py-12 px-6 text-white">
+            <div className="max-w-2xl mx-auto w-full py-12 md:px-6 text-white">
                 {apiKey ? (
-                    <div className="bg-gray-900/60 border border-gray-700 p-6 rounded-xl shadow-md space-y-5 w-full">
+                    <div className="bg-gray-900/60 border border-gray-700 p-6 rounded-xl shadow-md space-y-5 w-full relative">
+
                         <div className="text-center mb-6 text-sm text-yellow-300">
                             ⚠️ Do not share your API key with others!
                         </div>
 
-                        <div>
-                            <p className="text-sm text-gray-400 mb-1">🔑 API Key</p>
-                            <div className="bg-gray-800 border border-gray-700 px-4 py-2 rounded-lg text-sm font-mono break-all flex justify-between items-center">
-                                <span className="text-white break-all">
-                                    {showKey ? apiKey : "•".repeat(50)}
-                                </span>
-
-                                <div className="flex gap-2 items-center ml-4">
+                        <div className="flex flex-col gap-3">
+                            <div className="flex justify-between items-center gap-4">
+                                <div>
+                                    <p className="text-sm text-gray-400">API Key</p>
+                                </div>
+                                <div className="flex gap-2">
                                     <button
                                         onClick={() => setShowKey(prev => !prev)}
-                                        className="text-gray-400 hover:text-white cursor-pointer"
-                                        title={showKey ? "Hide API Key" : "Show API Key"}
+                                        className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded-lg text-whit cursor-pointer"
                                     >
-                                        {showKey ? <EyeOff size={20} /> : <Eye size={20} />}
+                                        {showKey ? "Hide" : "Show"}
                                     </button>
 
                                     <button
                                         onClick={handleCopy}
-                                        className="text-gray-400 hover:text-white cursor-pointer"
-                                        title="Copy API Key"
+                                        className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded-lg text-white cursor-pointer"
                                     >
-                                        {copied ? (
-                                            <Check className="h-4 w-4 text-emerald-400" />
-                                        ) : (
-                                            <Copy className="h-4 w-4" />
-                                        )}
+                                        {copied ? "Copied" : "Copy"}
                                     </button>
                                 </div>
-
+                            </div>
+                            <div className="bg-gray-800 border border-gray-700 px-4 py-2 rounded-lg text-sm font-mono truncate">
+                                {showKey ? apiKey : "•".repeat(50)}
                             </div>
                             {copied && (
                                 <p className="text-xs text-emerald-400 mt-1">Copied to clipboard!</p>
@@ -117,7 +120,7 @@ const ApiKey = () => {
                         </div>
 
                         <div>
-                            <p className="text-sm text-gray-400 mb-1">📅 Generated At</p>
+                            <p className="text-sm text-gray-400 mb-1">Generated At</p>
                             <p className="text-sm text-gray-300">{createdAt || "Unknown"}</p>
                         </div>
 
@@ -138,6 +141,7 @@ const ApiKey = () => {
                             </button>
                         </div>
                     </div>
+
                 ) : (
                     <div className="bg-gray-900/60 border border-gray-700 p-6 rounded-xl shadow-md space-y-5 text-center">
                         <div className="text-3xl text-yellow-400">🔐</div>

@@ -99,7 +99,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                             photoURL,
                             apiKey: status ? apiKey : null,
                             apiCreatedAt: status
-                                ? new Date(apiCreatedAt).toLocaleString()
+                                ? new Date(apiCreatedAt).toLocaleString(undefined, {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                    hour12: true,
+                                })
                                 : null,
                         });
                     } catch (err) {

@@ -5,115 +5,113 @@ import type { ApiData } from '../lib/parseToApiData';
 import { ContentTypeBadge } from './ContentTypeBadge';
 
 interface Props {
-    request: ApiData['request'];
+  request: ApiData['request'];
 }
 
 export const RequestBody: React.FC<Props> = ({ request }) => {
-    const { body, contentType } = request;
+  const { body, contentType } = request;
 
-    if (!body) {
-        return (
-            <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-medium text-gray-300">Request Body</h3>
-                </div>
-                <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm">
-                    <p className="text-gray-400 text-sm text-center">
-                        No Request body available.
-                    </p>
-                </div>
-            </div>
+  if (!body) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <h3 className="text-xl font-medium text-gray-300">Request Body</h3>
+        </div>
+        <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm">
+          <p className="text-gray-400 text-sm text-center">
+            No Request body available.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-        );
+  const getFormattedCode = (): { code: string; language: string } => {
+    if (contentType === 'json' && typeof body === 'object') {
+      try {
+        return {
+          code: JSON.stringify(body, null, 2),
+          language: 'json',
+        };
+      } catch {
+        return { code: '[Invalid JSON]', language: 'text' };
+      }
     }
 
-    const getFormattedCode = (): { code: string; language: string } => {
+    if (contentType === 'urlencoded' && typeof body === 'object') {
+      const lines = Object.entries(body).map(([k, v]) => `${k} : ${v}`);
+      return { code: lines.join('\n'), language: 'yaml' };
+    }
 
-        if (contentType === 'json' && typeof body === 'object') {
-            try {
-                return {
-                    code: JSON.stringify(body, null, 2),
-                    language: 'json',
-                };
-            } catch {
-                return { code: '[Invalid JSON]', language: 'text' };
-            }
+    if (contentType === 'form-data' && typeof body === 'object') {
+      const lines: string[] = [];
+
+      if (body.fields && typeof body.fields === 'object') {
+        for (const [key, value] of Object.entries(body.fields)) {
+          lines.push(`${key} : ${value}`);
         }
+      }
 
-        if (contentType === 'urlencoded' && typeof body === 'object') {
-            const lines = Object.entries(body).map(([k, v]) => `${k} : ${v}`);
-            return { code: lines.join('\n'), language: 'yaml' };
+      const validFiles = Array.isArray(body.files)
+        ? body.files.filter((file: any) => file?.name && file?.type)
+        : [];
+
+      if (validFiles.length > 0) {
+        if (lines.length > 0) lines.push('');
+        lines.push('# Uploaded Files');
+        for (const file of validFiles) {
+          lines.push(`- ${file.name} (${file.type})`);
         }
+      }
 
-        if (contentType === 'form-data' && typeof body === 'object') {
-            const lines: string[] = [];
+      return { code: lines.join('\n'), language: 'yaml' };
+    }
 
-            if (body.fields && typeof body.fields === 'object') {
-                for (const [key, value] of Object.entries(body.fields)) {
-                    lines.push(`${key} : ${value}`);
-                }
-            }
+    if (['html', 'xml'].includes(contentType)) {
+      return { code: body, language: 'html' };
+    }
 
-            const validFiles = Array.isArray(body.files)
-                ? body.files.filter((file: any) => file?.name && file?.type)
-                : [];
+    if (contentType === 'javascript') {
+      return { code: body, language: 'javascript' };
+    }
 
-            if (validFiles.length > 0) {
-                if (lines.length > 0) lines.push('');
-                lines.push('# Uploaded Files');
-                for (const file of validFiles) {
-                    lines.push(`- ${file.name} (${file.type})`);
-                }
-            }
+    if (typeof body === 'string') {
+      return { code: body, language: 'text' };
+    }
 
-            return { code: lines.join('\n'), language: 'yaml' };
-        }
-
-        if (['html', 'xml'].includes(contentType)) {
-            return { code: body, language: 'html' };
-        }
-
-        if (contentType === 'javascript') {
-            return { code: body, language: 'javascript' };
-        }
-
-        if (typeof body === 'string') {
-            return { code: body, language: 'text' };
-        }
-
-        return {
-            code: typeof body === 'object' ? JSON.stringify(body, null, 2) : String(body),
-            language: 'text',
-        };
+    return {
+      code: typeof body === 'object' ? JSON.stringify(body, null, 2) : String(body),
+      language: 'text',
     };
+  };
 
-    const { code, language } = getFormattedCode();
+  const { code, language } = getFormattedCode();
 
-    return (
-        <div className="space-y-4">
-            <div className="flex items-center gap-3">
-                <h3 className="text-xl font-medium text-gray-300">Request Body</h3>
-                <ContentTypeBadge type={contentType} />
-            </div>
+  return (
+    <div className="space-y-4 w-full">
+      <div className="flex flex-wrap items-center gap-3">
+        <h3 className="text-lg sm:text-xl font-medium text-gray-300">Request Body</h3>
+        <ContentTypeBadge type={contentType} />
+      </div>
 
-
-            <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm">
-                <SyntaxHighlighter
-                    language={language}
-                    style={vscDarkPlus}
-                    wrapLines
-                    wrapLongLines
-                    customStyle={{
-                        borderRadius: '0.5rem',
-                        padding: '1rem',
-                        backgroundColor: 'transparent',
-                        fontSize: '0.875rem',
-                        lineHeight: '1.5',
-                    }}
-                >
-                    {code}
-                </SyntaxHighlighter>
-            </div>
-        </div>
-    );
+      <div className="bg-gray-900/50 rounded-lg p-2 sm:p-4 font-mono text-xs sm:text-sm overflow-x-auto max-w-full">
+        <SyntaxHighlighter
+          language={language}
+          style={vscDarkPlus}
+          wrapLines
+          wrapLongLines
+          customStyle={{
+            borderRadius: '0.5rem',
+            backgroundColor: 'transparent',
+            fontSize: '0.8rem',
+            lineHeight: '1.4',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+          }}
+        >
+          {code}
+        </SyntaxHighlighter>
+      </div>
+    </div>
+  );
 };

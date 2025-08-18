@@ -13,10 +13,8 @@ export const ResponseBody: React.FC<Props> = ({ response }) => {
 
   if (!body) {
     return (
-      <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm">
-        <p className="text-gray-400 text-sm text-center">
-          No response body available.
-        </p>
+      <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm text-center">
+        <p className="text-gray-400">No response body available.</p>
       </div>
     );
   }
@@ -52,15 +50,17 @@ export const ResponseBody: React.FC<Props> = ({ response }) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
+      {/* Header */}
+      <div className="flex flex-wrap items-center gap-3">
         <h3 className="text-xl font-medium text-gray-300">Response Body</h3>
         <ContentTypeBadge type={contentType} />
       </div>
 
-      <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm">
+      {/* Code / HTML output */}
+      <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm overflow-x-auto max-w-full">
         {renderHtml ? (
           <div
-            className="prose prose-invert max-w-none text-white text-sm"
+            className="prose prose-invert max-w-none text-white text-sm break-words"
             dangerouslySetInnerHTML={{ __html: code }}
           />
         ) : (
@@ -75,6 +75,10 @@ export const ResponseBody: React.FC<Props> = ({ response }) => {
               backgroundColor: 'transparent',
               fontSize: '0.875rem',
               lineHeight: '1.5',
+              width: '100%',
+              overflowX: 'auto',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
             }}
           >
             {code}
@@ -82,5 +86,5 @@ export const ResponseBody: React.FC<Props> = ({ response }) => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
