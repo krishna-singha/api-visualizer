@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Copy, Check, EyeOff, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
