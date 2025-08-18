@@ -6,9 +6,9 @@ import { Radio, Bug, TabletSmartphone } from "lucide-react";
 
 const LandingPage = () => {
   return (
-    <main className="w-full flex-1 text-white py-12 px-4 sm:px-6 md:px-12 lg:px-20">
+    <main className="w-full flex-1 text-white">
       {/* Hero Section */}
-      <section className="text-center mb-8 min-h-[calc(100vh-3rem)] flex flex-col items-center justify-center px-4">
+      <section className="text-center mb-8 min-h-[calc(100vh-3rem)] flex flex-col items-center justify-center">
         <h1 className="text-[2.5rem] sm:text-5xl md:text-6xl font-bold mb-6">
           Inspect API Requests Live
         </h1>

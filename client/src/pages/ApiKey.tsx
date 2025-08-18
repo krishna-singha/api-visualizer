@@ -80,7 +80,7 @@ const ApiKey = () => {
     };
 
     return (
-        <div className="flex-1 h-full w-full mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="flex-1 h-full w-full mx-auto flex items-center justify-center">
             <div className="max-w-2xl mx-auto w-full py-12 md:px-6 text-white">
                 {apiKey ? (
                     <div className="bg-gray-900/60 border border-gray-700 p-6 rounded-xl shadow-md space-y-5 w-full relative">

@@ -156,7 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                         </p>
 
                         <a
-                            href={import.meta.env.VITE_BACKEND_URL}
+                            href={`${import.meta.env.VITE_BACKEND_URL}/ping`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition text-white"
