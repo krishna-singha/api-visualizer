@@ -1,5 +1,6 @@
 import { Server as HttpServer } from "http";
 import { Server as IOServer, Socket } from "socket.io";
+import User from "../models/User";
 
 interface ClientConnection {
   frontend?: Socket;
@@ -12,6 +13,8 @@ interface ClientMap {
 
 export const clients: ClientMap = {};
 
+const API_KEY_REGEX = /^[a-f0-9]{64}$/;
+
 export const setupTunnelServer = (server: HttpServer) => {
   const io = new IOServer(server, {
     cors: {
@@ -20,16 +23,35 @@ export const setupTunnelServer = (server: HttpServer) => {
     },
   });
 
-  io.on("connection", (socket) => {
-    const { apiKey, type } = socket.handshake.query as {
-      apiKey?: string;
-      type?: "frontend" | "agent";
-    };
+  // Validate apiKey + type before connection is accepted
+  io.use(async (socket, next) => {
+    const apiKey = socket.handshake.auth?.apiKey ?? socket.handshake.query.apiKey;
+    const type = socket.handshake.query.type;
 
-    if (!apiKey || !type) {
-      // console.warn("Missing apiKey or type in connection query");
-      return socket.disconnect();
+    // Strict format check also blocks object payloads
+    if (typeof apiKey !== "string" || !API_KEY_REGEX.test(apiKey)) {
+      return next(new Error("Invalid API key"));
     }
+    if (type !== "frontend" && type !== "agent") {
+      return next(new Error("Invalid connection type"));
+    }
+
+    try {
+      if (!(await User.exists({ apiKey }))) return next(new Error("Invalid API key"));
+    } catch {
+      return next(new Error("Server error"));
+    }
+
+    socket.data.apiKey = apiKey;
+    socket.data.type = type;
+    next();
+  });
+
+  io.on("connection", (socket) => {
+    const { apiKey, type } = socket.data as {
+      apiKey: string;
+      type: "frontend" | "agent";
+    };
 
     const conn = (clients[apiKey] ||= {});
 
@@ -50,7 +72,7 @@ export const setupTunnelServer = (server: HttpServer) => {
           }
         } 
         // else {
-        //   console.warn(`⚠️ No frontend connected for apiKey: ${apiKey}`);
+        //   console.warn(`No frontend connected for apiKey: ${apiKey}`);
         // }
       });
     }

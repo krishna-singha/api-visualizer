@@ -33,7 +33,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [connectionStatus, setConnectionStatus] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const socketRef = useRef<Socket | null>(null);
-  const connectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const connectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Custom setter that also updates localStorage
   const setHistoryMode = (enabled: boolean) => {
@@ -77,7 +77,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
           setShowTimeoutModal(false);
           break;
         }
-      } catch (err) {
+      } catch {
         setShowTimeoutModal(true);
         await new Promise((r) => setTimeout(r, 5000));
       }
@@ -96,7 +96,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     }, 10000);
 
     const socket = io(import.meta.env.VITE_BACKEND_URL, {
-      query: { apiKey: user.apiKey, type: "frontend" },
+      auth: { apiKey: user.apiKey },
+      query: { type: "frontend" },
       transports: ["websocket"],
     });
 
@@ -132,7 +133,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         if (historyMode) {
           await axios.post("/api/request-log/add", { uid: user.uid, apiData });
         }
-      } catch (err) {
+      } catch {
         console.warn("Invalid payload:", payload);
       }
     });
@@ -182,6 +183,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useSocketContext = () => {
   const context = useContext(SocketContext);
   if (!context) {
@@ -190,7 +192,7 @@ export const useSocketContext = () => {
   return context;
 };
 
-async function decryptJSON(encrypted: string, secret: string): Promise<any> {
+async function decryptJSON(encrypted: string, secret: string): Promise<unknown> {
   const [ivB64, authTagB64, cipherB64] = encrypted.split(":");
 
   const iv = Uint8Array.from(atob(ivB64), (c) => c.charCodeAt(0));
