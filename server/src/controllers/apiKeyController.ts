@@ -57,7 +57,8 @@ export const addApiKeyToDB = async (
   try {
     const { name, uid, email, photoURL } = req.body;
 
-    if (!name || !uid || !email) {
+    // Body values must be strings
+    if ([name, uid, email].some((v) => typeof v !== "string" || !v)) {
       return res.status(400).json({
         status: false,
         error: "Name, UID, and email are required.",
@@ -107,7 +108,7 @@ export const updateApiKey = async (
   try {
     const { uid } = req.body;
 
-    if (!uid) {
+    if (typeof uid !== "string" || !uid) {
       return res.status(400).json({
         status: false,
         error: "UID is required.",

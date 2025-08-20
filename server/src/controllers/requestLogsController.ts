@@ -2,6 +2,9 @@ import RequestLogs from "../models/RequestLogs";
 import User from "../models/User";
 import { Request, Response } from "express";
 
+const MAX_LOGS = 50;
+const MAX_LOG_SIZE = 250 * 1024;
+
 // To add request log in database
 export const addRequestLogs = async (
   req: Request,
@@ -10,14 +13,21 @@ export const addRequestLogs = async (
   try {
     const { uid, apiData } = req.body;
 
-    if (!uid || !apiData) {
+    if (typeof uid !== "string" || !uid || !apiData || typeof apiData !== "object") {
       return res.status(400).json({
         status: false,
         error: "uid and apiData are required.",
       });
     }
 
-    const user = await User.findOne({ uid });
+    if (Buffer.byteLength(JSON.stringify(apiData)) > MAX_LOG_SIZE) {
+      return res.status(413).json({
+        status: false,
+        error: "Request log too large.",
+      });
+    }
+
+    const user = await User.exists({ uid });
     if (!user) {
       return res.status(400).json({
         status: false,
@@ -25,17 +35,11 @@ export const addRequestLogs = async (
       });
     }
 
-    const existing = await RequestLogs.findOne({ uid });
-
-    if (!existing) {
-      await RequestLogs.create({ uid, requests: [apiData] });
-    } else {
-      existing.requests.push(apiData);
-      if (existing.requests.length > 50) {
-        existing.requests.splice(0, existing.requests.length - 50);
-      }
-      await existing.save();
-    }
+    await RequestLogs.updateOne(
+      { uid },
+      { $push: { requests: { $each: [apiData], $slice: -MAX_LOGS } } },
+      { upsert: true }
+    );
 
     return res.status(201).json({
       status: true,
@@ -64,17 +68,12 @@ export const fetchRequestLogs = async (
       });
     }
 
-    const user = await RequestLogs.findOne({ uid });
-    if (!user) {
-      return res.status(400).json({
-        status: false,
-        error: "No Request log found",
-      });
-    }
+    // No logs yet is not an error
+    const logs = await RequestLogs.findOne({ uid });
 
-    return res.status(201).json({
+    return res.status(200).json({
       status: true,
-      data: user.requests,
+      data: logs?.requests || [],
       message: "Request log found.",
     });
   } catch (error) {
@@ -100,16 +99,7 @@ export const clearRequestLogs = async (
       });
     }
 
-    const userLogs = await RequestLogs.findOne({ uid });
-    if (!userLogs) {
-      return res.status(400).json({
-        status: false,
-        error: "No Request log found",
-      });
-    }
-
-    userLogs.requests = [];
-    await userLogs.save();
+    await RequestLogs.updateOne({ uid }, { $set: { requests: [] } });
 
     return res.status(200).json({
       status: true,

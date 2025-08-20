@@ -4,7 +4,6 @@ import cors from "cors";
 import http from "http";
 import path from "path";
 import { connectMongoDB } from "./connections/mongoDB";
-import userRouter from "./routers/userRouter";
 import apiKeyRouter from "./routers/apiKeyRouter";
 import requestLogsRouter from "./routers/requestLogsRouter";
 import { setupTunnelServer } from "./socket/socketServer";
@@ -28,7 +27,7 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(accessControlMiddleware);
 
@@ -42,7 +41,6 @@ app.get("/ping", (_req, res) => {
   res.status(200).render("ping", { FRONTEND_URL: process.env.FRONTEND_URL });
 });
 
-app.use("/api/users", userRouter);
 app.use("/api/key", apiKeyRouter);
 app.use("/api/request-log", requestLogsRouter);
 
@@ -50,8 +48,10 @@ app.use("/api/request-log", requestLogsRouter);
 setupTunnelServer(server);
 
 // Start server
-connectMongoDB().then(() => {
-  server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
-});
+connectMongoDB()
+  .then(() => {
+    server.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  })
+  .catch(() => process.exit(1));
