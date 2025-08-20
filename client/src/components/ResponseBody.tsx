@@ -59,9 +59,12 @@ export const ResponseBody: React.FC<Props> = ({ response }) => {
       {/* Code / HTML output */}
       <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-sm overflow-x-auto max-w-full">
         {renderHtml ? (
-          <div
-            className="prose prose-invert max-w-none text-white text-sm break-words"
-            dangerouslySetInnerHTML={{ __html: code }}
+          // Untrusted HTML: empty sandbox blocks scripts and dashboard origin access
+          <iframe
+            title="HTML response preview"
+            sandbox=""
+            srcDoc={code}
+            className="w-full h-96 rounded-lg bg-white"
           />
         ) : (
           <SyntaxHighlighter
