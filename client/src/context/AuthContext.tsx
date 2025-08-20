@@ -34,9 +34,21 @@ interface AuthContextType {
     loading: boolean;
     showTimeoutModal: boolean;
     setShowTimeoutModal: (show: boolean) => void;
+    updateApiKey: (apiKey: string, apiCreatedAt: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const formatDate = (iso: string) =>
+    new Date(iso).toLocaleString(undefined, {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+    });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
@@ -49,6 +61,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } catch (error) {
             console.error("Login error:", error);
         }
+    };
+
+    // Shared so routes + socket see a new/regenerated key without reload
+    const updateApiKey = (apiKey: string, apiCreatedAt: string) => {
+        setUser((prev) => (prev ? { ...prev, apiKey, apiCreatedAt: formatDate(apiCreatedAt) } : prev));
     };
 
     const logout = async () => {
@@ -71,7 +88,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                         awake = true;
                         setShowTimeoutModal(false);
                     }
-                } catch (err) {
+                } catch {
                     setShowTimeoutModal(true);
                     await new Promise((r) => setTimeout(r, 5000));
                 }
@@ -98,17 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                             displayName,
                             photoURL,
                             apiKey: status ? apiKey : null,
-                            apiCreatedAt: status
-                                ? new Date(apiCreatedAt).toLocaleString(undefined, {
-                                    day: "2-digit",
-                                    month: "short",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    second: "2-digit",
-                                    hour12: true,
-                                })
-                                : null,
+                            apiCreatedAt: status ? formatDate(apiCreatedAt) : null,
                         });
                     } catch (err) {
                         console.error("Failed to fetch API key:", err);
@@ -132,7 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading, showTimeoutModal, setShowTimeoutModal }}>
+        <AuthContext.Provider value={{ user, login, logout, loading, showTimeoutModal, setShowTimeoutModal, updateApiKey }}>
             {children}
 
             {/* Timeout Modal */}
@@ -170,6 +177,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = (): AuthContextType => {
     const context = useContext(AuthContext);
     if (!context) throw new Error("useAuth must be used within AuthProvider");

@@ -3,8 +3,8 @@ import { Server as IOServer, Socket } from "socket.io";
 import User from "../models/User";
 
 interface ClientConnection {
-  frontend?: Socket;
-  agent?: Socket;
+  frontends: Set<Socket>;
+  agents: Set<Socket>;
 }
 
 interface ClientMap {
@@ -53,37 +53,31 @@ export const setupTunnelServer = (server: HttpServer) => {
       type: "frontend" | "agent";
     };
 
-    const conn = (clients[apiKey] ||= {});
+    // conn stays in map while any socket of this key is connected
+    const conn = (clients[apiKey] ||= { frontends: new Set(), agents: new Set() });
 
     if (type === "frontend") {
-      conn.frontend = socket;
+      conn.frontends.add(socket);
       // console.log(`Frontend connected [${apiKey}]`);
 
     } else if (type === "agent") {
-      conn.agent = socket;
+      conn.agents.add(socket);
       // console.log(`Agent connected [${apiKey}]`);
 
       socket.on("log", (payload: any) => {
-        if (conn.frontend?.connected) {
-          try {
-            conn.frontend.emit("log", payload);
-          } catch (err) {
-            console.error("Failed to forward log");
-          }
-        } 
-        // else {
-        //   console.warn(`No frontend connected for apiKey: ${apiKey}`);
-        // }
+        // Forward only the encrypted string, drop anything else
+        if (typeof payload?.data !== "string") return;
+        conn.frontends.forEach((frontend) => frontend.emit("log", { data: payload.data }));
       });
     }
 
     socket.on("disconnect", () => {
       // console.log(`${type} disconnected [${apiKey}]`);
 
-      if (conn.frontend === socket) conn.frontend = undefined;
-      if (conn.agent === socket) conn.agent = undefined;
+      conn.frontends.delete(socket);
+      conn.agents.delete(socket);
 
-      if (!conn.frontend && !conn.agent) {
+      if (!conn.frontends.size && !conn.agents.size) {
         delete clients[apiKey];
         // console.log(`Cleaned up clients[${apiKey}]`);
       }

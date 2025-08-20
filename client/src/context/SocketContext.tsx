@@ -22,11 +22,10 @@ interface SocketContextType {
 const SocketContext = createContext<SocketContextType | null>(null);
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
-  const { user, showTimeoutModal, setShowTimeoutModal } = useAuth();
+  const { user, setShowTimeoutModal } = useAuth();
   const [data, setData] = useState<ApiData[]>([]);
   const [historyData, setHistoryData] = useState<ApiData[]>([]);
   const [historyMode, setHistoryModeState] = useState(() => {
-    // Get initial value from localStorage, default to false
     const saved = localStorage.getItem('history-mode');
     return saved !== null ? JSON.parse(saved) : false;
   });
@@ -34,6 +33,15 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const connectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const attemptRef = useRef(0);
+
+  // Socket handlers read latest values, not the ones from connect time
+  const userRef = useRef(user);
+  const historyModeRef = useRef(historyMode);
+  useEffect(() => {
+    userRef.current = user;
+    historyModeRef.current = historyMode;
+  });
 
   // Custom setter that also updates localStorage
   const setHistoryMode = (enabled: boolean) => {
@@ -59,31 +67,33 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Connect to the socket
   const connect = async () => {
-    if (!user?.apiKey || socketRef.current || showTimeoutModal) return;
+    if (!userRef.current?.apiKey || socketRef.current) return;
 
+    const attempt = ++attemptRef.current;
+    const isCurrent = () => attempt === attemptRef.current;
     setIsConnecting(true);
 
+    // Wait for server
     let awake = false;
-    while (!awake) {
-      if (showTimeoutModal) {
-        // If modal opens while waiting, stop completely
-        setIsConnecting(false);
-        return;
-      }
+    for (let i = 0; i < 12 && !awake && isCurrent(); i++) {
       try {
-        const res = await axios.get("/ping", { timeout: 5000 });
-        if (res.status === 200) {
-          awake = true;
-          setShowTimeoutModal(false);
-          break;
-        }
+        await axios.get("/ping", { timeout: 5000 });
+        awake = true;
       } catch {
         setShowTimeoutModal(true);
         await new Promise((r) => setTimeout(r, 5000));
       }
     }
+    // Cancelled by disconnect or replaced by a newer connect
+    if (!isCurrent() || socketRef.current) return;
 
-    if (showTimeoutModal) return;
+    // Read key after waiting
+    const apiKey = userRef.current?.apiKey;
+    if (!awake || !apiKey) {
+      setIsConnecting(false);
+      return;
+    }
+    setShowTimeoutModal(false);
 
     // Clear any existing timeout
     if (connectTimeoutRef.current) {
@@ -96,7 +106,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     }, 10000);
 
     const socket = io(import.meta.env.VITE_BACKEND_URL, {
-      auth: { apiKey: user.apiKey },
+      auth: { apiKey },
       query: { type: "frontend" },
       transports: ["websocket"],
     });
@@ -113,6 +123,9 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     socket.on("disconnect", () => {
       setConnectionStatus(false);
       setIsConnecting(false);
+
+      // Server-side disconnect
+      if (!socket.active && socketRef.current === socket) socketRef.current = null;
     });
 
     socket.on("connect_error", (err) => {
@@ -122,16 +135,21 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       }
       setIsConnecting(false);
       console.error("Socket.IO connection error:", err.message);
+
+      // Server rejected handshake
+      if (!socket.active && socketRef.current === socket) socketRef.current = null;
     });
 
     socket.on("log", async (payload: { data: string }) => {
       try {
-        const decrypted = await decryptJSON(payload.data, user.apiKey!);
+        // Decrypt with the key this socket was opened with
+        const decrypted = await decryptJSON(payload.data, apiKey);
         const apiData = parseToApiData(decrypted);
         setData((prev) => [apiData, ...prev]);
 
-        if (historyMode) {
-          await axios.post("/api/request-log/add", { uid: user.uid, apiData });
+        const uid = userRef.current?.uid;
+        if (historyModeRef.current && uid) {
+          await axios.post("/api/request-log/add", { uid, apiData });
         }
       } catch {
         console.warn("Invalid payload:", payload);
@@ -142,6 +160,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const disconnect = () => {
+    attemptRef.current++;
     setIsConnecting(false);
     if (connectTimeoutRef.current) {
       clearTimeout(connectTimeoutRef.current);
@@ -161,6 +180,15 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       disconnect();
     };
   }, []);
+
+  // Reconnect with new key after regenerate; drop socket on logout
+  const apiKey = user?.apiKey;
+  useEffect(() => {
+    if (!socketRef.current) return;
+    disconnect();
+    if (apiKey) connect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiKey]);
 
   return (
     <SocketContext.Provider

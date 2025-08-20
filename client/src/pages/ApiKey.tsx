@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 
 
 const ApiKey = () => {
-    const { user } = useAuth();
+    const { user, updateApiKey } = useAuth();
     const navigate = useNavigate();
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [createdAt, setCreatedAt] = useState<string | null>(null);
@@ -32,10 +32,8 @@ const ApiKey = () => {
                 photoURL: user.photoURL,
             });
             const { status, apiKey, apiCreatedAt } = res.data;
-            if (status && apiKey && apiCreatedAt) {
-                setApiKey(apiKey);
-                setCreatedAt(new Date(apiCreatedAt).toLocaleString());
-            }
+            // Update shared user; effect above syncs local state
+            if (status && apiKey && apiCreatedAt) updateApiKey(apiKey, apiCreatedAt);
         } catch (err) {
             console.error("Error generating API key:", err);
         } finally {
@@ -49,18 +47,7 @@ const ApiKey = () => {
         try {
             const res = await axios.put("/api/key/update", { uid: user.uid });
             const { status, apiKey, apiCreatedAt } = res.data;
-            if (status && apiKey && apiCreatedAt) {
-                setApiKey(apiKey);
-                setCreatedAt(new Date(apiCreatedAt).toLocaleString(undefined, {
-                    year: "numeric",
-                    month: "short",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                    hour12: true,
-                }));
-            }
+            if (status && apiKey && apiCreatedAt) updateApiKey(apiKey, apiCreatedAt);
         } catch (err) {
             console.error("Error regenerating API key:", err);
         } finally {
