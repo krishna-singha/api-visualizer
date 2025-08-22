@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useRef, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 import axios from "axios";
 import { parseToApiData } from "../lib/parseToApiData";
+import { waitForServer } from "../lib/waitForServer";
 import type { ApiData } from "../lib/parseToApiData";
 import { io, Socket } from "socket.io-client";
 
@@ -74,16 +75,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     setIsConnecting(true);
 
     // Wait for server
-    let awake = false;
-    for (let i = 0; i < 12 && !awake && isCurrent(); i++) {
-      try {
-        await axios.get("/ping", { timeout: 5000 });
-        awake = true;
-      } catch {
-        setShowTimeoutModal(true);
-        await new Promise((r) => setTimeout(r, 5000));
-      }
-    }
+    const awake = await waitForServer(setShowTimeoutModal);
     // Cancelled by disconnect or replaced by a newer connect
     if (!isCurrent() || socketRef.current) return;
 
@@ -93,7 +85,6 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       setIsConnecting(false);
       return;
     }
-    setShowTimeoutModal(false);
 
     // Clear any existing timeout
     if (connectTimeoutRef.current) {

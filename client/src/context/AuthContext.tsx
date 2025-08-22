@@ -14,6 +14,7 @@ import type { ReactNode } from "react";
 import type { User as FirebaseUser } from "firebase/auth";
 import axios from "axios";
 import { X } from "lucide-react"
+import { waitForServer } from "../lib/waitForServer";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 axios.defaults.baseURL = BACKEND_URL;
@@ -78,23 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Ping backend on mount to check server is awake or not
     useEffect(() => {
-        const ping = async () => {
-            let awake = false;
-
-            while (!awake) {
-                try {
-                    const res = await axios.get("/ping", { timeout: 5000 });
-                    if (res.status === 200) {
-                        awake = true;
-                        setShowTimeoutModal(false);
-                    }
-                } catch {
-                    setShowTimeoutModal(true);
-                    await new Promise((r) => setTimeout(r, 5000));
-                }
-            }
-        };
-        ping();
+        waitForServer(setShowTimeoutModal);
     }, []);
 
     // Firebase auth state listener
