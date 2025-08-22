@@ -1,5 +1,13 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 
+const toOrigin = (url?: string) => {
+  try {
+    return url ? new URL(url).origin : "";
+  } catch {
+    return "";
+  }
+};
+
 export const accessControlMiddleware: RequestHandler = (
   req: Request,
   res: Response,
@@ -7,9 +15,10 @@ export const accessControlMiddleware: RequestHandler = (
 ) => {
   if (req.path === "/ping") return next();
 
-  const origin = req.headers.origin || req.headers.referer;
+  // Exact origin match; startsWith let "https://app.vercel.app.evil.com" through
+  const origin = toOrigin(req.headers.origin || req.headers.referer);
 
-  if (origin && origin.startsWith(process.env.FRONTEND_URL!)) {
+  if (origin && origin === toOrigin(process.env.FRONTEND_URL)) {
     return next();
   }
 

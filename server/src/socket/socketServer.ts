@@ -18,7 +18,7 @@ const API_KEY_REGEX = /^[a-f0-9]{64}$/;
 export const setupTunnelServer = (server: HttpServer) => {
   const io = new IOServer(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || "*",
+      origin: process.env.FRONTEND_URL,
       credentials: true,
     },
   });
