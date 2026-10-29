@@ -13,8 +13,6 @@ export const accessControlMiddleware: RequestHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  if (req.path === "/ping") return next();
-
   // Exact origin match; startsWith let "https://app.vercel.app.evil.com" through
   const origin = toOrigin(req.headers.origin || req.headers.referer);
 

@@ -2,7 +2,6 @@ import { createContext, useContext, useState, useRef, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 import axios from "axios";
 import { parseToApiData } from "../lib/parseToApiData";
-import { waitForServer } from "../lib/waitForServer";
 import type { ApiData } from "../lib/parseToApiData";
 import { io, Socket } from "socket.io-client";
 
@@ -23,7 +22,7 @@ interface SocketContextType {
 const SocketContext = createContext<SocketContextType | null>(null);
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
-  const { user, setShowTimeoutModal } = useAuth();
+  const { user } = useAuth();
   const [data, setData] = useState<ApiData[]>([]);
   const [historyData, setHistoryData] = useState<ApiData[]>([]);
   const [historyMode, setHistoryModeState] = useState(() => {
@@ -34,7 +33,6 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const connectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const attemptRef = useRef(0);
 
   // Socket handlers read latest values, not the ones from connect time
   const userRef = useRef(user);
@@ -67,24 +65,11 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   }, [historyMode]);
 
   // Connect to the socket
-  const connect = async () => {
-    if (!userRef.current?.apiKey || socketRef.current) return;
-
-    const attempt = ++attemptRef.current;
-    const isCurrent = () => attempt === attemptRef.current;
-    setIsConnecting(true);
-
-    // Wait for server
-    const awake = await waitForServer(setShowTimeoutModal);
-    // Cancelled by disconnect or replaced by a newer connect
-    if (!isCurrent() || socketRef.current) return;
-
-    // Read key after waiting
+  const connect = () => {
     const apiKey = userRef.current?.apiKey;
-    if (!awake || !apiKey) {
-      setIsConnecting(false);
-      return;
-    }
+    if (!apiKey || socketRef.current) return;
+
+    setIsConnecting(true);
 
     // Clear any existing timeout
     if (connectTimeoutRef.current) {
@@ -151,7 +136,6 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const disconnect = () => {
-    attemptRef.current++;
     setIsConnecting(false);
     if (connectTimeoutRef.current) {
       clearTimeout(connectTimeoutRef.current);
@@ -178,7 +162,6 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     if (!socketRef.current) return;
     disconnect();
     if (apiKey) connect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey]);
 
   return (
