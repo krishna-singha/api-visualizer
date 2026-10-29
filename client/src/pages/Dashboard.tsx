@@ -12,7 +12,7 @@ import { ConnectionStatus } from "../components/ConnectionStatus";
 
 const DashBoard = () => {
   const { user } = useAuth();
-  const { data: liveData, historyData, setHistoryData, historyMode, connect, disconnect, connectionStatus, isConnecting } = useSocketContext();
+  const { data: liveData, historyData, setHistoryData, historyMode, connect, disconnect, connectionStatus, isConnecting, connectionError } = useSocketContext();
 
   const [selectedRequest, setSelectedRequest] = useState<ApiData | null>(null);
   const [filters, setFilters] = useState<FilterOptions>({
@@ -100,6 +100,10 @@ const DashBoard = () => {
           <h3 className="text-lg font-semibold text-white">Connection</h3>
           <ConnectionStatus status={connectionStatus} isConnecting={isConnecting} />
         </div>
+
+        {connectionError && (
+          <p role="alert" className="text-xs text-red-400 mb-4">{connectionError}</p>
+        )}
 
         <button
           onClick={connectionStatus ? disconnect : connect}

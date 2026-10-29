@@ -26,6 +26,7 @@ const Navbar = () => {
     const {
         connectionStatus,
         isConnecting,
+        connectionError,
         disconnect,
         connect,
         clearAllData,
@@ -120,6 +121,9 @@ const Navbar = () => {
                                                     ? "Want to Disconnect?"
                                                     : "Want to Connect?"}
                                         </h3>
+                                        {connectionError && (
+                                            <p role="alert" className="text-xs text-red-400">{connectionError}</p>
+                                        )}
                                         <button
                                             onClick={connectionStatus ? disconnect : connect}
                                             disabled={isConnecting}

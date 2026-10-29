@@ -1,6 +1,7 @@
 import { Server as HttpServer } from "http";
 import { Server as IOServer, Socket } from "socket.io";
 import User from "../models/User";
+import { isValidApiKeyFormat } from "../utils/apiKey";
 
 interface ClientConnection {
   frontends: Set<Socket>;
@@ -13,7 +14,17 @@ interface ClientMap {
 
 export const clients: ClientMap = {};
 
-const API_KEY_REGEX = /^[a-f0-9]{64}$/;
+const authError = (code: string, message: string) => Object.assign(new Error(message), { data: { code } });
+
+export const revokeApiKey = (apiKey: string) => {
+  const conn = clients[apiKey];
+  if (!conn) return;
+  [...conn.frontends, ...conn.agents].forEach((socket) => {
+    socket.emit("auth_error", { code: "KEY_REVOKED" });
+    socket.disconnect(true);
+  });
+};
+
 
 export const setupTunnelServer = (server: HttpServer) => {
   const io = new IOServer(server, {
@@ -29,15 +40,15 @@ export const setupTunnelServer = (server: HttpServer) => {
     const type = socket.handshake.query.type;
 
     // Strict format check also blocks object payloads
-    if (typeof apiKey !== "string" || !API_KEY_REGEX.test(apiKey)) {
-      return next(new Error("Invalid API key"));
+    if (!isValidApiKeyFormat(apiKey)) {
+      return next(authError("INVALID_KEY_FORMAT", "Invalid API key format"));
     }
     if (type !== "frontend" && type !== "agent") {
       return next(new Error("Invalid connection type"));
     }
 
     try {
-      if (!(await User.exists({ apiKey }))) return next(new Error("Invalid API key"));
+      if (!(await User.exists({ apiKey }))) return next(authError("KEY_NOT_FOUND", "API key not found"));
     } catch {
       return next(new Error("Server error"));
     }

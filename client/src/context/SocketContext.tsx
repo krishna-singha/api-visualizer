@@ -8,6 +8,7 @@ import { io, Socket } from "socket.io-client";
 interface SocketContextType {
   connectionStatus: boolean;
   isConnecting: boolean;
+  connectionError: string | null;
   data: ApiData[];
   historyData: ApiData[];
   historyMode: boolean;
@@ -21,6 +22,13 @@ interface SocketContextType {
 
 const SocketContext = createContext<SocketContextType | null>(null);
 
+// Codes sent by server on handshake rejection / key regenerate
+const AUTH_MESSAGES: Record<string, string> = {
+  INVALID_KEY_FORMAT: "Invalid API key format. Reload the page.",
+  KEY_NOT_FOUND: "API key not found. It may have been regenerated in another session. Reload the page.",
+  KEY_REVOKED: "API key was regenerated in another session. Reload the page to use the new key.",
+};
+
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   const [data, setData] = useState<ApiData[]>([]);
@@ -31,7 +39,9 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   });
   const [connectionStatus, setConnectionStatus] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const socketRef = useRef<Socket | null>(null);
+  const wantConnectedRef = useRef(false);
   const connectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Socket handlers read latest values, not the ones from connect time
@@ -69,6 +79,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     const apiKey = userRef.current?.apiKey;
     if (!apiKey || socketRef.current) return;
 
+    wantConnectedRef.current = true;
+    setConnectionError(null);
     setIsConnecting(true);
 
     // Clear any existing timeout
@@ -94,6 +106,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       }
       setConnectionStatus(true);
       setIsConnecting(false);
+      setConnectionError(null);
     });
 
     socket.on("disconnect", () => {
@@ -112,8 +125,17 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       setIsConnecting(false);
       console.error("Socket.IO connection error:", err.message);
 
+      const code = (err as Error & { data?: { code?: string } }).data?.code;
+      setConnectionError((code && AUTH_MESSAGES[code]) || "Can't reach the server. Retrying...");
+
       // Server rejected handshake
       if (!socket.active && socketRef.current === socket) socketRef.current = null;
+    });
+
+    // Key regenerated elsewhere
+    socket.on("auth_error", ({ code }: { code: string }) => {
+      // Ignore if this tab already reconnected with the new key
+      if (socketRef.current === socket) setConnectionError(AUTH_MESSAGES[code] || code);
     });
 
     socket.on("log", async (payload: { data: string }) => {
@@ -136,6 +158,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const disconnect = () => {
+    wantConnectedRef.current = false;
     setIsConnecting(false);
     if (connectTimeoutRef.current) {
       clearTimeout(connectTimeoutRef.current);
@@ -159,7 +182,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   // Reconnect with new key after regenerate; drop socket on logout
   const apiKey = user?.apiKey;
   useEffect(() => {
-    if (!socketRef.current) return;
+    if (!wantConnectedRef.current) return;
     disconnect();
     if (apiKey) connect();
   }, [apiKey]);
@@ -169,6 +192,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         connectionStatus,
         isConnecting,
+        connectionError,
         data,
         historyData,
         historyMode,

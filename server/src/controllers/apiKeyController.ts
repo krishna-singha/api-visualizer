@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import User from "../models/User";
-import crypto from "crypto";
+import { generateApiKey } from "../utils/apiKey";
+import { revokeApiKey } from "../socket/socketServer";
 
 export const fetchApiKey = async (
   req: Request,
@@ -38,12 +39,12 @@ export const fetchApiKey = async (
   }
 };
 
-// Generate a unique 64-character API key
+// Generate a unique avz- API key
 const generateUniqueApiKey = async (): Promise<string> => {
   let key: string;
   let existing;
   do {
-    key = crypto.randomBytes(32).toString("hex");
+    key = generateApiKey();
     existing = await User.findOne({ apiKey: key });
   } while (existing);
   return key;
@@ -125,10 +126,13 @@ export const updateApiKey = async (
 
     const newApiKey = await generateUniqueApiKey();
     const newCreatedAt = new Date().toISOString();
+    const oldApiKey = user.apiKey;
 
     user.apiKey = newApiKey;
     user.apiCreatedAt = newCreatedAt;
     await user.save();
+
+    revokeApiKey(oldApiKey);
 
     return res.status(200).json({
       status: true,
