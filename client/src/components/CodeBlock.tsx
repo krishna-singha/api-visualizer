@@ -1,122 +1,20 @@
-// import { useState } from "react";
-
-// const CodeBlock = ({ filename = "app.js/app.ts" }) => {
-//   const [copied, setCopied] = useState(false);
-
-//   const codeString = `
-//   import express from "express";
-
-//   //-------- IMPORT API COMPONENTS --------
-//   import { connectToTunnel, tunnelMiddleware } from "api-visualizer";
-
-//   // ------- CONNECT TO THE TUNNEL WITH YOUR API KEY ---------
-//   (async () => {
-//     try {
-//       connectToTunnel("YOUR_API_KEY"); // 🔑 REPLACE WITH YOU API KEY -------
-//     } catch (err) {
-//       console.error("[Tunnel] Failed to connect:", err);
-//     }
-//   })();
-
-//   const app = express();
-
-//   // -------- ATTACH THE MIDDLEWARE -------
-//   app.use(tunnelMiddleware);
-
-//   app.use(express.json());
-//   app.use(express.urlencoded({ extended: true }));
-
-//   app.post("/api", (req, res) => {
-//     res.json({ message: "Received", body: req.body });
-//   });
-
-//   app.listen(3000, () => {
-//     console.log("Server running at http://localhost:3000");
-//   });
-//   `;
-
-//   const handleCopy = () => {
-//     navigator.clipboard.writeText(codeString);
-//     setCopied(true);
-//     setTimeout(() => setCopied(false), 3000);
-//   };
-
-//   return (
-// <section className="mb-20 sm:mb-24 max-w-4xl mx-auto">
-//   <h2 className="text-2xl sm:text-3xl font-semibold mb-4 text-center">
-//     Connect Middleware to Your Server
-//   </h2>
-
-//       {/* Filename Header */}
-// <div className="max-w-4xl mx-auto mb-2 text-sm text-gray-400 font-mono">
-//   {filename}
-// </div>
-
-// <div className="relative bg-gray-900 border border-gray-700 rounded-lg overflow-x-auto p-6 sm:p-10">
-//   {/* Copy Button */}
-//   <button
-//     onClick={handleCopy}
-//     className="cursor-pointer absolute top-4 right-4 bg-gray-800 hover:bg-gray-700 text-green-400 px-3 py-1 rounded text-sm transition-colors"
-//   >
-//     {copied ? "Copied!" : "Copy"}
-//   </button>
-
-//         <pre className="font-mono text-sm sm:text-base leading-relaxed">
-//           <code>
-//             {codeString.split("\n").map((line, idx) => {
-//               // Highlight comments in gray
-//               if (line.trim().startsWith("//")) {
-//                 return (
-//                   <div key={idx} className="text-gray-500">
-//                     {line}
-//                   </div>
-//                 );
-//               }
-//               // Highlight specific import line in light blue
-//               if (line.includes("import { apiVisualizer } from 'api-visualizer'")) {
-//                 return (
-//                   <div key={idx} className="text-blue-400">
-//                     {line}
-//                   </div>
-//                 );
-//               }
-//               return <div key={idx} className="text-green-400">{line}</div>;
-//             })}
-//           </code>
-//         </pre>
-
-//       </div>
-
-//       <p className="text-center text-gray-400 mt-4">
-//         Simply import the middleware and add your API key — requests start streaming live instantly.
-//       </p>
-//     </section>
-//   );
-// };
-
-// export default CodeBlock;
-
 import { useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
-const codeString = `import express from "express";
+const esmCode = `import dotenv from "dotenv";
+dotenv.config();
+import express from "express";
 
 // IMPORT API COMPONENTS
 import { connectToTunnel, tunnelMiddleware } from "api-visualizer";
 
-// CONNECT TO THE TUNNEL WITH YOUR API KEY
-(async () => {
-  try {
-    connectToTunnel("YOUR_API_KEY");          // REPLACE WITH YOUR API KEY
-  } catch (err) {
-    console.error("[Tunnel] Failed to connect:", err);
-  }
-})();
+// CONNECT WITH YOUR API KEY FROM THE DASHBOARD
+connectToTunnel(process.env.API_VISUALIZER_KEY);
 
 const app = express();
 
-// ATTACH THE MIDDLEWARE
+// ATTACH THE MIDDLEWARE (before body parsers)
 app.use(tunnelMiddleware);
 
 app.use(express.json());
@@ -130,13 +28,106 @@ app.listen(3000, () => {
   console.log("Server running at http://localhost:3000");
 });`;
 
+const cjsCode = `require("dotenv").config();
+const express = require("express");
+
+// IMPORT API COMPONENTS
+const { connectToTunnel, tunnelMiddleware } = require("api-visualizer");
+
+// CONNECT WITH YOUR API KEY FROM THE DASHBOARD
+connectToTunnel(process.env.API_VISUALIZER_KEY);
+
+const app = express();
+
+// ATTACH THE MIDDLEWARE (before body parsers)
+app.use(tunnelMiddleware);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.post("/api", (req, res) => {
+  res.json({ message: "Received", body: req.body });
+});
+
+app.listen(3000, () => {
+  console.log("Server running at http://localhost:3000");
+});`;
+
+const tsCode = `import dotenv from "dotenv";
+dotenv.config();
+import express, { Request, Response } from "express";
+
+// IMPORT API COMPONENTS (types included)
+import { connectToTunnel, tunnelMiddleware } from "api-visualizer";
+
+// CONNECT WITH YOUR API KEY FROM THE DASHBOARD
+connectToTunnel(process.env.API_VISUALIZER_KEY);
+
+const app = express();
+
+// ATTACH THE MIDDLEWARE (before body parsers)
+app.use(tunnelMiddleware);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.post("/api", (req: Request, res: Response) => {
+  res.json({ message: "Received", body: req.body });
+});
+
+app.listen(3000, () => {
+  console.log("Server running at http://localhost:3000");
+});`;
+
+const variants = [
+  {
+    id: "esm",
+    label: "ES Modules",
+    filename: "app.js",
+    language: "javascript",
+    code: esmCode,
+    note: <>Needs <code className="bg-gray-800 px-1 rounded text-green-400">"type": "module"</code> in your package.json, or name the file <code className="bg-gray-800 px-1 rounded text-green-400">app.mjs</code>.</>,
+  },
+  {
+    id: "cjs",
+    label: "CommonJS",
+    filename: "app.js",
+    language: "javascript",
+    code: cjsCode,
+    note: <>The default for Node.js projects without <code className="bg-gray-800 px-1 rounded text-green-400">"type": "module"</code> in package.json.</>,
+  },
+  {
+    id: "ts",
+    label: "TypeScript",
+    filename: "app.ts",
+    language: "typescript",
+    code: tsCode,
+    note: <>Types for <code className="bg-gray-800 px-1 rounded text-green-400">api-visualizer</code> are built in. Install <code className="bg-gray-800 px-1 rounded text-green-400">@types/express</code> for Express types.</>,
+  },
+] as const;
+
+// Highlight by content so line numbers can differ per variant
+const isKeyLine = (line: string) =>
+  line.includes(`"api-visualizer"`) || line.startsWith("connectToTunnel(") || line.includes("app.use(tunnelMiddleware)");
+
 const CodeBlock = () => {
+  const [selected, setSelected] = useState<(typeof variants)[number]["id"]>("esm");
   const [copied, setCopied] = useState(false);
 
+  const variant = variants.find((v) => v.id === selected) ?? variants[0];
+  const keyLines = new Set(
+    variant.code.split("\n").flatMap((line, i) => (isKeyLine(line) ? [i + 1] : []))
+  );
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(codeString);
+    navigator.clipboard.writeText(variant.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);
+  };
+
+  const select = (id: typeof selected) => {
+    setSelected(id);
+    setCopied(false);
   };
 
   return (
@@ -145,35 +136,61 @@ const CodeBlock = () => {
         Connect Middleware to Your Server
       </h2>
 
+      <p className="text-center text-gray-400 mb-4 text-sm">
+        Install:{" "}
+        <code className="bg-gray-800 px-1 rounded text-green-400">npm install api-visualizer dotenv</code>
+        {" "}· Add{" "}
+        <code className="bg-gray-800 px-1 rounded text-green-400">API_VISUALIZER_KEY=avz-...</code>
+        {" "}to your .env
+      </p>
+
       <div className="bg-gray-900 border border-gray-700 rounded-lg overflow-x-auto p-6">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-400 font-mono">
-            app.js/app.ts
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+          <div role="tablist" aria-label="Module format" className="flex flex-wrap gap-1 bg-gray-800 rounded-lg p-1">
+            {variants.map((v) => (
+              <button
+                key={v.id}
+                role="tab"
+                aria-selected={selected === v.id}
+                onClick={() => select(v.id)}
+                className={`cursor-pointer px-3 py-1 rounded-md text-sm transition-colors ${selected === v.id
+                  ? "bg-gray-700 text-white"
+                  : "text-gray-400 hover:text-white"
+                  }`}
+              >
+                {v.label}
+              </button>
+            ))}
           </div>
-          {/* Copy Button */}
-          <button
-            onClick={handleCopy}
-            className="cursor-pointer bg-gray-800 hover:bg-gray-700 text-green-400 px-3 py-1 rounded text-sm transition-colors"
-          >
-            {copied ? "Copied!" : "Copy"}
-          </button>
+
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-400 font-mono">{variant.filename}</span>
+            {/* Copy Button */}
+            <button
+              onClick={handleCopy}
+              className="cursor-pointer bg-gray-800 hover:bg-gray-700 text-green-400 px-3 py-1 rounded text-sm transition-colors"
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          </div>
         </div>
 
         <SyntaxHighlighter
-          language="javascript"
+          language={variant.language}
           style={oneDark}
           showLineNumbers
           wrapLines
-          lineProps={(lineNumber) => {
-            if (lineNumber === 4 || lineNumber === 18 || lineNumber >= 7 && lineNumber <= 13) {
-              return { style: { backgroundColor: "rgba(255,255,0,0.1)" } };
-            }
-            return {};
-          }}
+          lineProps={(lineNumber) =>
+            keyLines.has(lineNumber)
+              ? { style: { backgroundColor: "rgba(255,255,0,0.1)" } }
+              : {}
+          }
         >
-          {codeString}
+          {variant.code}
         </SyntaxHighlighter>
       </div>
+
+      <p className="text-center text-gray-400 mt-4 text-sm">{variant.note}</p>
     </section>
   );
 }

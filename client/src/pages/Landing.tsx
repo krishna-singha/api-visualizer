@@ -47,7 +47,7 @@ const LandingPage = () => {
           <Feature
             title="Debug Faster"
             icon={<Bug />}
-            description="Structured payloads, decoded headers, and clear response tracking."
+            description="Structured payloads, readable headers, and clear response tracking."
           />
           <Feature
             title="Remote Access"
@@ -125,7 +125,7 @@ const LandingPage = () => {
           <Step
             number={3}
             title="See Logs Live"
-            text="All requests made to localhost show up in real time."
+            text="Every request to your server shows up on the dashboard in real time."
           />
         </div>
       </section>
@@ -139,8 +139,37 @@ const LandingPage = () => {
           <code>$ npm install api-visualizer</code>
         </div>
         <p className="text-center text-gray-500 mt-4">
-          Currently supports Express.js with Node.js.
+          For Node.js servers built with Express.
         </p>
+      </section>
+
+      {/* Compatibility */}
+      <section className="mb-20 sm:mb-24 max-w-4xl mx-auto">
+        <h2 className="text-2xl sm:text-3xl font-semibold mb-6 text-center">
+          Works With
+        </h2>
+        <div className="grid sm:grid-cols-2 gap-6 text-gray-300">
+          <InfoList
+            title="Supported"
+            items={[
+              "Node.js 18 or newer",
+              "Express 4 and Express 5",
+              "JavaScript and TypeScript (types included)",
+              "ES modules (import) and CommonJS (require)",
+              "Any host: localhost, Docker, a VPS or the cloud",
+            ]}
+          />
+          <InfoList
+            title="Good to know"
+            items={[
+              "Other frameworks (Fastify, Koa, Hono, Next.js API routes) aren't supported yet",
+              "File uploads need a parser like multer; fields and file names are logged, not file contents",
+              "Passwords, tokens, cookies and Authorization headers are redacted by default (v2.1.0+)",
+              "Bodies over 100 KB are truncated; binary and compressed bodies show only their size",
+              "No port forwarding or public URL needed: your server connects out to the dashboard",
+            ]}
+          />
+        </div>
       </section>
 
       {/* FAQ */}
@@ -148,7 +177,10 @@ const LandingPage = () => {
         <h2 className="text-2xl sm:text-3xl font-semibold mb-6 text-center">
           FAQs
         </h2>
-        <FAQ q="Does it store my data?" a="No, unless you enable History." />
+        <FAQ q="Which servers does it work with?" a="Node.js servers using Express 4 or 5. Other frameworks aren't supported yet." />
+        <FAQ q="Do I need TypeScript?" a="No. It works in plain JavaScript; TypeScript types are included if you use them." />
+        <FAQ q="Does it store my data?" a="No, unless you enable History. Then your last 50 requests are saved to your account." />
+        <FAQ q="Where do I put my API key?" a="In an environment variable such as API_VISUALIZER_KEY, never in your code." />
         <FAQ q="Is it production-safe?" a="This tool is intended for development only." />
       </section>
 
@@ -281,6 +313,17 @@ const Step = ({
     </div>
     <h4 className="text-lg sm:text-xl text-white mb-1">{title}</h4>
     <p className="text-sm sm:text-base text-gray-400">{text}</p>
+  </div>
+);
+
+const InfoList = ({ title, items }: { title: string; items: string[] }) => (
+  <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+    <h3 className="text-lg font-semibold text-white mb-3">{title}</h3>
+    <ul className="list-disc list-inside space-y-2 text-sm sm:text-base text-gray-400">
+      {items.map((item) => (
+        <li key={item}>{item}</li>
+      ))}
+    </ul>
   </div>
 );
 
