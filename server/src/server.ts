@@ -4,6 +4,7 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import http from "http";
+import path from "path";
 import { connectMongoDB } from "./connections/mongoDB";
 import apiKeyRouter from "./routers/apiKeyRouter";
 import requestLogsRouter from "./routers/requestLogsRouter";
@@ -20,8 +21,12 @@ if (!process.env.FRONTEND_URL) {
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// Set TRUST_PROXY=1 only behind a reverse proxy (nginx/caddy); else clients could spoof X-Forwarded-For
-if (process.env.TRUST_PROXY) app.set("trust proxy", Number(process.env.TRUST_PROXY));
+// Render puts one proxy in front
+app.set("trust proxy", 1);
+
+// EJS config
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "./views"));
 
 // Create a raw HTTP server from Express app
 const server = http.createServer(app);
@@ -41,6 +46,11 @@ app.use(accessControlMiddleware);
 // Routes
 app.get("/", (_req, res) => {
   res.status(200).json({ message: "API is running" });
+});
+
+// Ping page as EJS
+app.get("/ping", (_req, res) => {
+  res.status(200).render("ping", { FRONTEND_URL: process.env.FRONTEND_URL });
 });
 
 // Per-IP limits

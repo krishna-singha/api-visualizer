@@ -13,6 +13,8 @@ import { auth, googleProvider } from "../config/firebase";
 import type { ReactNode } from "react";
 import type { User as FirebaseUser } from "firebase/auth";
 import axios from "axios";
+import { X } from "lucide-react"
+import { waitForServer } from "../lib/waitForServer";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 axios.defaults.baseURL = BACKEND_URL;
@@ -31,6 +33,8 @@ interface AuthContextType {
     login: () => Promise<void>;
     logout: () => Promise<void>;
     loading: boolean;
+    showTimeoutModal: boolean;
+    setShowTimeoutModal: (show: boolean) => void;
     updateApiKey: (apiKey: string, apiCreatedAt: string) => void;
 }
 
@@ -50,6 +54,7 @@ const formatDate = (iso: string) =>
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const [showTimeoutModal, setShowTimeoutModal] = useState(false);
 
     const login = async () => {
         try {
@@ -71,6 +76,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.error("Logout error:", error);
         }
     };
+
+    // Ping backend on mount to check server is awake or not
+    useEffect(() => {
+        waitForServer(setShowTimeoutModal);
+    }, []);
 
     // Firebase auth state listener
     useEffect(() => {
@@ -114,8 +124,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading, updateApiKey }}>
+        <AuthContext.Provider value={{ user, login, logout, loading, showTimeoutModal, setShowTimeoutModal, updateApiKey }}>
             {children}
+
+            {/* Timeout Modal */}
+            {showTimeoutModal && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-50">
+                    <div className="relative bg-gray-900/80 backdrop-blur-md rounded-2xl border border-gray-700 p-8 w-full max-w-md text-center text-white shadow-lg">
+
+                        <button
+                            onClick={() => setShowTimeoutModal(false)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-white transition"
+                            aria-label="Close modal"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        <h3 className="text-xl font-semibold mb-4">Connection Timeout</h3>
+                        <p className="mb-6 text-gray-300">
+                            The connection is taking longer than expected.
+                            Maybe the Backend server on Render is currently asleep.
+                            Click the button below to wake it up
+                        </p>
+
+                        <a
+                            href={`${import.meta.env.VITE_BACKEND_URL}/ping`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition text-white"
+                        >
+                            Start Render Server
+                        </a>
+                    </div>
+                </div>
+            )}
         </AuthContext.Provider>
     );
 };
